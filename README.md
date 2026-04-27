@@ -1,36 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# rok-landing
 
-## Getting Started
+Public landing page for kingdom 4028 (Rise of Kingdoms). Next.js 16 (App Router) +
+Tailwind v4 + Framer Motion. Talks to [`rok-api`](../rok-api) for migration
+requirements, media, and the DKP leaderboard.
 
-First, run the development server:
+## Local development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local
+# point NEXT_PUBLIC_API_URL at your local or deployed rok-api
+npm run dev          # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Free deploy
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Full end-to-end walkthrough (Neon + Render + Vercel) lives in [`rok-api/DEPLOY.md`](../rok-api/DEPLOY.md). Short version:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Vercel
 
-## Learn More
+1. Sign in at <https://vercel.com> with GitHub.
+2. **Add New → Project** → pick this repo. Vercel auto-detects Next.js — no config needed.
+3. **Environment Variables** (Production + Preview):
+   - `NEXT_PUBLIC_API_URL` = `https://<your-rok-api>.onrender.com`
+4. **Deploy**.
+5. Once Vercel gives you the URL (e.g. `https://rok-landing-xxx.vercel.app`), copy it
+   and append to the API's `CORS_ORIGINS` env var on Render.
 
-To learn more about Next.js, take a look at the following resources:
+ISR: `/migration` and `/media` revalidate every 60 seconds — admin edits
+propagate within a minute on the public site.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Pages
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Route        | Purpose                                                    |
+| ------------ | ---------------------------------------------------------- |
+| `/`          | Hero + CTA                                                 |
+| `/migration` | Kingdom stats + dynamic migration requirements             |
+| `/media`     | Dynamic YouTube grid                                       |
+| `/dkp`       | Dynamic leaderboard with search/filter/sort/pagination     |
 
-## Deploy on Vercel
+## Stack
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Next.js 16 / React 19 / TypeScript / Tailwind v4 / Lucide / Framer Motion / Cinzel + Inter (Google Fonts).
