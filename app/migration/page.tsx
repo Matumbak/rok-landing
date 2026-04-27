@@ -4,7 +4,7 @@ import {KingdomInfo} from "@/components/KingdomInfo";
 import {PageHero} from "@/components/PageHero";
 import {Button} from "@/components/ui/button";
 import {DISCORD_URL} from "@/lib/data";
-import {fetchRequirements} from "@/lib/api";
+import {fetchKingdomStats, fetchRequirements} from "@/lib/api";
 
 export const metadata: Metadata = {
   title: "Migration",
@@ -16,7 +16,10 @@ export const metadata: Metadata = {
 export const revalidate = 60;
 
 export default async function MigrationPage() {
-  const requirements = await fetchRequirements();
+  const [stats, requirements] = await Promise.all([
+    fetchKingdomStats(),
+    fetchRequirements(),
+  ]);
 
   return (
     <>
@@ -25,7 +28,7 @@ export default async function MigrationPage() {
         title="Join the Horde"
         description="The gates of 4028 are open to disciplined governors who pull weight in KvK, Ark, and the Pass. Read the brief, then knock on Discord."
       />
-      <KingdomInfo requirements={requirements} />
+      <KingdomInfo stats={stats} requirements={requirements} />
       <section className="relative pb-24 md:pb-32">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="border border-accent/40 bg-card/60 backdrop-blur-sm p-8 md:p-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">

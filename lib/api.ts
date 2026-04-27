@@ -5,6 +5,15 @@
 export const API_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
+export type ApiKingdomStat = {
+  id: string;
+  label: string;
+  value: string;
+  iconKey: string;
+  order: number;
+  active: boolean;
+};
+
 export type ApiRequirement = {
   id: string;
   title: string;
@@ -89,6 +98,13 @@ async function get<T>(
   } catch {
     return null;
   }
+}
+
+export async function fetchKingdomStats(): Promise<ApiKingdomStat[]> {
+  const data = await get<{ items: ApiKingdomStat[] }>("/api/kingdom-stats", {
+    next: { revalidate: 60 },
+  });
+  return data?.items ?? [];
 }
 
 export async function fetchRequirements(): Promise<ApiRequirement[]> {

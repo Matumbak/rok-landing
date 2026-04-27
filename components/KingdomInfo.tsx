@@ -6,48 +6,52 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { KINGDOM_STATS } from "@/lib/data";
-import type { ApiRequirement } from "@/lib/api";
+import type { ApiKingdomStat, ApiRequirement } from "@/lib/api";
 import { resolveIcon } from "@/lib/icons";
 
 type Props = {
+  stats?: ApiKingdomStat[];
   requirements?: ApiRequirement[];
 };
 
-export function KingdomInfo({ requirements = [] }: Props) {
+export function KingdomInfo({ stats = [], requirements = [] }: Props) {
   return (
     <AnimatedSection className="relative py-24 md:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <SectionHeading
-          eyebrow="Intel Brief"
-          title="Kingdom Stats"
-          subtitle="Hard numbers. No ceremony."
-        />
+        {stats.length > 0 && (
+          <>
+            <SectionHeading
+              eyebrow="Intel Brief"
+              title="Kingdom Stats"
+              subtitle="Hard numbers. No ceremony."
+            />
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          {KINGDOM_STATS.map((stat) => {
-            const Icon = stat.icon;
-            return (
-              <Card
-                key={stat.label}
-                className="hover:border-accent/60 transition-colors"
-              >
-                <CardContent className="p-6 flex flex-col gap-3">
-                  <Icon className="h-6 w-6 text-accent" />
-                  <span className="font-display text-3xl md:text-4xl tracking-[0.05em] text-foreground engraved">
-                    {stat.value}
-                  </span>
-                  <span className="text-xs uppercase tracking-[0.3em] text-muted">
-                    {stat.label}
-                  </span>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+              {stats.map((stat) => {
+                const Icon = resolveIcon(stat.iconKey);
+                return (
+                  <Card
+                    key={stat.id}
+                    className="hover:border-accent/60 transition-colors"
+                  >
+                    <CardContent className="p-6 flex flex-col gap-3">
+                      <Icon className="h-6 w-6 text-accent" />
+                      <span className="font-display text-3xl md:text-4xl tracking-[0.05em] text-foreground engraved">
+                        {stat.value}
+                      </span>
+                      <span className="text-xs uppercase tracking-[0.3em] text-muted">
+                        {stat.label}
+                      </span>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </>
+        )}
 
         {requirements.length > 0 && (
-          <div className="mt-20">
+          <div className={stats.length > 0 ? "mt-20" : ""}>
             <SectionHeading
               eyebrow="Recruitment"
               title="Migration Requirements"
