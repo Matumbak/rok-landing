@@ -1,79 +1,75 @@
 /**
- * Tesseract-backed OCR for RoK screenshots. The worker is created lazily
- * on first call and reused for the lifetime of the page — initialization
- * downloads the eng.traineddata blob (~30 MB) and the WASM core, so we
- * pay that cost once instead of per-image.
+ * RoK screenshot OCR — server-side via Gemini 2.0 Flash.
  *
- * Public surface is intentionally tiny: pass a Blob, get back the text.
- * Callers run the result through parse-rok.ts to extract structured
- * fields.
+ * The previous Tesseract.js + regex pipeline produced ~50% accuracy on
+ * the engraved Russian client font and required an ever-growing pile of
+ * recovery heuristics (period-eaten, В→8, ч→4, etc). Gemini handles all
+ * five RoK screen types (profile / kill data / details / resources /
+ * speedups) in one call and returns a typed JSON object.
+ *
+ * Cost: free tier covers 1500 req/day on gemini-2.0-flash, well above
+ * realistic migration-form volume.
+ *
+ * Privacy: API key lives only on rok-api; the browser only POSTs the
+ * already-public Vercel Blob URL.
  */
 
-import type { Worker } from "tesseract.js";
+import { API_URL } from "@/lib/api";
 
-let workerPromise: Promise<Worker> | null = null;
-
-async function getWorker(): Promise<Worker> {
-  if (!workerPromise) {
-    // Tesseract.js is ~3MB of JS + WASM + traineddata — load lazily so
-    // it never enters the initial bundle. The dynamic import also keeps
-    // it out of the SSR pass entirely.
-    workerPromise = (async () => {
-      const { createWorker } = await import("tesseract.js");
-      // Load Russian + English so the parser works for the RoK ru-RU
-      // client (most of our applicants) AND the English client. Each
-      // traineddata file is ~5–10 MB compressed and pulled from the
-      // tessdata-fast CDN; cached after first load.
-      const worker = await createWorker(["rus", "eng"], undefined, {
-        logger: () => {},
-      });
-      // PSM 3 (Fully Automatic Page Segmentation) does better than the
-      // single-block mode 6 on RoK's irregularly-laid-out modals where
-      // labels and values sit in different blocks separated by icons.
-      await worker.setParameters({
-        tessedit_pageseg_mode: "3" as unknown as never,
-      });
-      return worker;
-    })();
-  }
-  return workerPromise;
-}
-
-export async function extractText(image: Blob | string): Promise<string> {
-  const worker = await getWorker();
-  const t0 = performance.now();
-  const result = await worker.recognize(image);
-  const text = result.data.text;
-  const elapsed = Math.round(performance.now() - t0);
-  // Group log so it's collapsible in DevTools. Full raw text first so the
-  // user can copy-paste it back when reporting bad parses.
-  /* eslint-disable no-console */
-  console.groupCollapsed(
-    `[OCR] extracted ${text.length} chars in ${elapsed}ms`,
-  );
-  console.log("--- RAW TEXT ---");
-  console.log(text);
-  console.log("--- END RAW ---");
-  console.groupEnd();
-  /* eslint-enable no-console */
-  return text;
+export interface ParsedRokScreen {
+  power: string | null;
+  killPoints: string | null;
+  vipLevel: string | null;
+  t1Kills: string | null;
+  t2Kills: string | null;
+  t3Kills: string | null;
+  t4Kills: string | null;
+  t5Kills: string | null;
+  deaths: string | null;
+  maxValorPoints: string | null;
+  food: string | null;
+  wood: string | null;
+  stone: string | null;
+  gold: string | null;
+  speedupsConstruction: string | null;
+  speedupsResearch: string | null;
+  speedupsTraining: string | null;
+  speedupsHealing: string | null;
+  speedupsUniversal: string | null;
 }
 
 /**
- * Extract from many images in parallel-but-bounded fashion. Tesseract.js
- * is single-worker so true parallelism doesn't help; we just await
- * sequentially and let the caller decide whether to await the batch or
- * race it with the rest of the upload pipeline.
+ * Ask the API to OCR an already-uploaded blob. The server fetches the
+ * image and sends it to Gemini; we just receive the structured result.
  */
-export async function extractMany(images: Blob[]): Promise<string[]> {
-  const out: string[] = [];
-  for (const img of images) {
-    try {
-      out.push(await extractText(img));
-    } catch (err) {
-      console.warn("[ocr] extract failed", err);
-      out.push("");
-    }
+export async function parseUploadedScreen(
+  blobUrl: string,
+): Promise<ParsedRokScreen> {
+  const t0 = performance.now();
+  const res = await fetch(`${API_URL}/api/ocr/parse`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ blobUrl }),
+  });
+  const elapsed = Math.round(performance.now() - t0);
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    /* eslint-disable no-console */
+    console.warn(
+      `[OCR] /api/ocr/parse failed in ${elapsed}ms`,
+      res.status,
+      err,
+    );
+    /* eslint-enable no-console */
+    throw new Error(err?.error ?? `ocr_failed_${res.status}`);
   }
-  return out;
+
+  const body = (await res.json()) as { ok: boolean; data: ParsedRokScreen };
+  /* eslint-disable no-console */
+  console.groupCollapsed(`[OCR] parsed via Gemini in ${elapsed}ms`);
+  console.log(body.data);
+  console.groupEnd();
+  /* eslint-enable no-console */
+  return body.data;
 }

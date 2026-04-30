@@ -21,8 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { compressImage } from "@/lib/compress";
-import { extractText } from "@/lib/ocr/extract";
-import { parseRokScreens, type ParsedStats } from "@/lib/ocr/parse-rok";
+import { parseUploadedScreen, type ParsedRokScreen } from "@/lib/ocr/extract";
 import {
   MigrationScreenshot,
   submitMigrationApplication,
@@ -180,7 +179,6 @@ export function MigrationApplyForm() {
   );
 
   /** Concatenated OCR text from every successfully OCR'd screenshot. */
-  const [ocrRawText, setOcrRawText] = useState<string>("");
 
   // Restore draft from localStorage on mount. We persist both the form
   // state AND the `extracted` set so a reload doesn't make OCR think
@@ -244,13 +242,13 @@ export function MigrationApplyForm() {
    * value the user typed manually.
    */
   const applyOcr = useCallback(
-    (stats: ParsedStats) => {
+    (stats: ParsedRokScreen) => {
       setState((s) => {
         const next = { ...s };
         const justFilled = new Set<OcrFieldKey>();
         const skipped: Record<string, string> = {};
         for (const key of OCR_FIELD_KEYS) {
-          const val = stats[key as keyof ParsedStats];
+          const val = stats[key as keyof ParsedRokScreen];
           if (!val) continue;
           const current = s[key];
           if (current && !extracted.has(key)) {
@@ -268,7 +266,7 @@ export function MigrationApplyForm() {
           console.log(
             "[OCR] filled:",
             Object.fromEntries(
-              [...justFilled].map((k) => [k, stats[k as keyof ParsedStats]]),
+              [...justFilled].map((k) => [k, stats[k as keyof ParsedRokScreen]]),
             ),
           );
         }
@@ -320,53 +318,19 @@ export function MigrationApplyForm() {
               prev.map((p) => (p.id === id ? { ...p, progress: 50 } : p)),
             );
 
-            // Upload + OCR in parallel — OCR doesn't block the upload pipe.
-            // Only fields that look like text-bearing screens (account /
-            // resource / dkp) go through OCR; commander screens are noisy
-            // and don't have the labels we look for.
+            // Skip OCR for the commanders category — those screens are
+            // pure imagery (officers eyeball them).
             const shouldOcr =
               category === "account" ||
               category === "resource" ||
               category === "dkp";
 
-            const uploadPromise = uploadScreenshot({
+            const out = await uploadScreenshot({
               blob: compressed.blob,
               contentType: compressed.contentType,
               filename: file.name.replace(/\.[^.]+$/, "") + ".webp",
               sessionId,
             });
-
-            const ocrPromise = shouldOcr
-              ? (async () => {
-                  setFiles((prev) =>
-                    prev.map((p) =>
-                      p.id === id ? { ...p, ocrStatus: "running" } : p,
-                    ),
-                  );
-                  try {
-                    const text = await extractText(compressed.blob);
-                    setOcrRawText((prev) =>
-                      prev ? `${prev}\n---\n${text}` : text,
-                    );
-                    const stats = parseRokScreens(text);
-                    if (Object.keys(stats).length > 0) applyOcr(stats);
-                    setFiles((prev) =>
-                      prev.map((p) =>
-                        p.id === id ? { ...p, ocrStatus: "done" } : p,
-                      ),
-                    );
-                  } catch (err) {
-                    console.warn("[ocr] failed", err);
-                    setFiles((prev) =>
-                      prev.map((p) =>
-                        p.id === id ? { ...p, ocrStatus: "error" } : p,
-                      ),
-                    );
-                  }
-                })()
-              : Promise.resolve();
-
-            const out = await uploadPromise;
             setFiles((prev) =>
               prev.map((p) =>
                 p.id === id
@@ -382,9 +346,37 @@ export function MigrationApplyForm() {
                   : p,
               ),
             );
-            // Don't block upload completion on OCR — the form lets the
-            // user submit even if OCR is still running on a screen.
-            void ocrPromise;
+
+            // OCR runs after the blob is live — Gemini fetches it from
+            // the public Vercel Blob URL. Doesn't block the user from
+            // submitting if it's still in flight.
+            if (shouldOcr) {
+              setFiles((prev) =>
+                prev.map((p) =>
+                  p.id === id ? { ...p, ocrStatus: "running" } : p,
+                ),
+              );
+              void parseUploadedScreen(out.url)
+                .then((stats) => {
+                  const filled = Object.values(stats).filter(
+                    (v) => v != null,
+                  ).length;
+                  if (filled > 0) applyOcr(stats);
+                  setFiles((prev) =>
+                    prev.map((p) =>
+                      p.id === id ? { ...p, ocrStatus: "done" } : p,
+                    ),
+                  );
+                })
+                .catch((err) => {
+                  console.warn("[OCR] failed", err);
+                  setFiles((prev) =>
+                    prev.map((p) =>
+                      p.id === id ? { ...p, ocrStatus: "error" } : p,
+                    ),
+                  );
+                });
+            }
           } catch (err) {
             setFiles((prev) =>
               prev.map((p) =>
@@ -472,7 +464,7 @@ export function MigrationApplyForm() {
           hasScrolls: state.hasScrolls,
           reason: state.reason.trim() || null,
 
-          ocrRawText: ocrRawText.trim() || null,
+          ocrRawText: null,
 
           screenshots: ready.map((f) => ({
             url: f.url!,
@@ -496,7 +488,7 @@ export function MigrationApplyForm() {
         setSubmitting(false);
       }
     },
-    [files, state, ocrRawText],
+    [files, state],
   );
 
   if (submitted) {
