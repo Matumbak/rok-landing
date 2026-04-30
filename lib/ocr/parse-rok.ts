@@ -208,15 +208,100 @@ const NUMBER_RE_GLOBAL =
 
 /**
  * Duration regex — at least one unit (day/hour/minute) must be present.
- * Anchored alternatives prevent the empty-match fallback that v2 hit.
+ * Cyrillic units use `(?![а-яёa-z])` lookahead instead of `\b`, since
+ * default JS `\b` only fires on ASCII word boundaries and would treat
+ * "дн.", "ч20", "м<EOL>" as no-boundary, dropping legitimate matches.
+ * Longer alternatives are listed first so "дней" wins over "дн", etc.
  */
 const DURATION_COMPONENT =
-  /\d+\s*(?:дн\.?|дней|d|day|days|ч\.?|час[ао]?в?|h|hr|hrs|hour|hours|мин\.?|минут[ыа]?|м\.?|m|min|mins|minute|minutes)\b/gi;
+  /\d+\s*(?:дней|дн\.?|часов|часа|час|ч(?![а-яёa-z])|минут[ыа]?|мин\.?|м(?![а-яёa-z])|days?\b|day|hours?\b|hour|hrs?\b|hr|minutes?\b|minute|mins?\b|min|[dhm](?![a-z]))/gi;
 
 /** Strip alias-content from `mutable` after a successful capture so later
  *  aliases (especially the generic "ускорение") don't re-match the same line. */
 function blank(s: string, start: number, end: number): string {
   return s.slice(0, start) + " ".repeat(end - start) + s.slice(end);
+}
+
+const RESOURCE_KEYS = new Set<keyof ParsedStats>([
+  "food",
+  "wood",
+  "stone",
+  "gold",
+]);
+
+/**
+ * Recover the magnitude letter that Tesseract regularly drops on RoK's
+ * engraved-Cyrillic resource rows. Observed corruptions:
+ *
+ *   "2.0В"  → "208"      (period eaten + В→8)
+ *   "1.8В"  → "1.88"     (В→8 only)
+ *   "3.7В"  → "3.78"
+ *   "330.7K"→ "3307K"    (period eaten, K preserved)
+ *
+ * Per the user's rule of thumb: every value in the resource row carries
+ * a magnitude suffix (M/B/K) unless the underlying count is below 100K.
+ * So when the cleaned string has no magnitude letter and matches one of
+ * the corruption shapes, we re-insert the suffix that almost certainly
+ * was there originally.
+ */
+function recoverResourceMagnitude(
+  raw: string,
+  key: keyof ParsedStats,
+): string {
+  if (!RESOURCE_KEYS.has(key)) return raw;
+  const s = raw.replace(/\s+/g, "");
+
+  // Trust a present magnitude letter, but rescue a lost decimal point.
+  const withLetter = s.match(/^(\d+)([KMBGTkmbgtКМБВТкмбвт])$/);
+  if (withLetter) {
+    const body = withLetter[1];
+    const letter = withLetter[2];
+    if (body.length >= 4 && !/[.,]/.test(body)) {
+      return `${body.slice(0, -1)}.${body.slice(-1)}${letter}`;
+    }
+    return s;
+  }
+
+  // 3-digit no-period — last digit was almost certainly the В suffix.
+  if (/^\d{3}$/.test(s)) return `${s[0]}.${s[1]}B`;
+
+  // X.YZ shape — Z is the magnitude-letter confusion.
+  if (/^\d\.\d{2}$/.test(s)) return `${s.slice(0, -1)}B`;
+
+  // Otherwise leave as-is (plain value below 100K is legitimate).
+  return s;
+}
+
+/**
+ * Patch up Cyrillic-digit OCR confusions inside a duration slice so the
+ * parser can recognise "3 дн", "6 дн", "5 ч 55 м" etc. Replacements are
+ * scoped to "next to a unit letter" so we don't accidentally turn
+ * legitimate Cyrillic words into digits.
+ *
+ *   "Здн."  → "3 дн."
+ *   "бдн."  → "6 дн."
+ *   "5455 м" → "5 ч 55 м"   (ч rendered as a digit-shaped 4 → split)
+ */
+function fixDurationOcrNoise(slice: string): string {
+  let s = slice
+    // Cyrillic numerals adjacent to a unit letter.
+    .replace(/(^|[^а-яё])З(?=\s*(?:дн|ч|м|days?|hours?|minutes?))/gi, "$13")
+    .replace(/(^|[^а-яё])б(?=\s*(?:дн|ч|м|days?|hours?|minutes?))/gi, "$16")
+    .replace(/(^|[^а-яё])[Оо](?=\s*(?:дн|ч|м|days?|hours?|minutes?))/g, "$10");
+
+  // Collapsed "X ч YY м" → "XYYY м" where the embedded ch-shaped digit
+  // is usually 4. Split it back so DURATION_COMPONENT can pick up both.
+  s = s.replace(/(\d{4,6})\s*м(?=\s|$|[^а-яёa-z])/g, (whole, digits) => {
+    const minutes = digits.slice(-2);
+    const before = digits.slice(0, -2);
+    if (Number.parseInt(minutes, 10) >= 60) return whole;
+    if (!/4$/.test(before)) return whole;
+    const hours = before.slice(0, -1);
+    if (!hours || Number.parseInt(hours, 10) >= 1000) return whole;
+    return `${hours} ч ${minutes} м`;
+  });
+
+  return s;
 }
 
 /** Default search horizon when no newline terminates the slice early. */
@@ -248,20 +333,21 @@ export function parseRokScreens(text: string): ParsedStats {
       const slice = tail.slice(0, sliceEnd);
 
       if (field.duration) {
-        const matches = slice.match(DURATION_COMPONENT);
+        const cleanedSlice = fixDurationOcrNoise(slice);
+        const matches = cleanedSlice.match(DURATION_COMPONENT);
         if (!matches || matches.length === 0) {
           console.log(
-            `[OCR] ${field.key} alias="${alias}" → no duration in slice="${slice.slice(0, 80)}"`,
+            `[OCR] ${field.key} alias="${alias}" → no duration in slice="${slice.slice(0, 80)}" (post-fix="${cleanedSlice.slice(0, 80)}")`,
           );
           continue;
         }
         const joined = matches.join(" ").trim();
         out[field.key] = joined;
+        const fixedTag =
+          cleanedSlice === slice ? "" : ` (after OCR-fix from "${slice.slice(0, 80)}")`;
         console.log(
-          `[OCR] ${field.key} ✓ alias="${alias}" → "${joined}" (slice="${slice.slice(0, 80)}")`,
+          `[OCR] ${field.key} ✓ alias="${alias}" → "${joined}"${fixedTag}`,
         );
-        // Consume the alias + duration so the universal "ускорение " alias
-        // doesn't grab this same line on its own iteration.
         mutable = blank(mutable, idx, idx + alias.length + sliceEnd);
         break;
       }
@@ -293,19 +379,109 @@ export function parseRokScreens(text: string): ParsedStats {
         ? matches[matches.length - 1]
         : matches[0];
       const cleaned = cleanNumber(picked);
-      out[field.key] = cleaned;
+      const recovered = recoverResourceMagnitude(cleaned, field.key);
+      out[field.key] = recovered;
+      const tag = recovered === cleaned ? "" : ` (recovered from "${cleaned}")`;
       console.log(
-        `[OCR] ${field.key} ✓ alias="${alias}" → "${cleaned}" picked from [${matches.join(", ")}] (slice="${slice.slice(0, 80)}")`,
+        `[OCR] ${field.key} ✓ alias="${alias}" → "${recovered}"${tag} picked from [${matches.join(", ")}] (slice="${slice.slice(0, 80)}")`,
       );
       mutable = blank(mutable, idx, idx + alias.length + sliceEnd);
       break;
     }
   }
 
+  // Positional fallback for the governor profile screen. Tesseract
+  // routinely mangles the engraved Russian labels ("Очки убийств" →
+  // "usm т tous"), so when label-anchored matching misses the core
+  // fields, fall back to row-pattern inference: the alliance bracket
+  // line carries Kill Points + Power; the civilization line carries
+  // current Valor + Max Valor.
+  const before = { ...out };
+  applyProfileScreenFallback(text, out);
+  const fallbackFilled = Object.keys(out).filter(
+    (k) => out[k as keyof ParsedStats] !== before[k as keyof ParsedStats],
+  );
+  if (fallbackFilled.length > 0) {
+    console.log(
+      "[OCR] profile-screen fallback filled:",
+      Object.fromEntries(fallbackFilled.map((k) => [k, out[k as keyof ParsedStats]])),
+    );
+  }
+
   console.log("[OCR] final stats:", out);
   console.groupEnd();
   /* eslint-enable no-console */
   return out;
+}
+
+/**
+ * Last-ditch parser for the governor profile modal. Operates on the
+ * RAW text (with newlines, original case) — Tesseract often turns the
+ * Russian labels into garbage, but the surrounding *layout* is stable:
+ *
+ *   [3801]Justice Risen   1 796 955 517   77 676 008
+ *   ✦ Франция             1 395 699       7 191 564
+ *   ...
+ *   Побед: 21   0x Самодержец
+ *
+ * Row 1 (alliance bracket) → KP, Power
+ * Row 2 (single Cyrillic-word line) → Valor, MaxValor (we keep MaxValor only)
+ *
+ * Only fills fields that label-matching missed.
+ */
+function applyProfileScreenFallback(
+  rawText: string,
+  out: ParsedStats,
+): void {
+  // Profile-screen markers — headers / labels that show even when their
+  // exact text is mangled. Bail out on speedup / resource screens where
+  // the heuristics below would misfire.
+  const lower = rawText.toLowerCase();
+  const isProfileScreen =
+    /правител|альянс|альянсу|кол-во|champions|olymp|самодержец/.test(lower) ||
+    /\[\d{2,5}\][^\n]*\d/.test(rawText);
+  const isResourceOrSpeedupScreen =
+    /ваши\s*ресурс|ускорения|тип\s*ресурса|тип\s*ускорения|ресурсы|ускорение/.test(
+      lower,
+    );
+  if (!isProfileScreen || isResourceOrSpeedupScreen) return;
+
+  const lines = rawText.split(/[\r\n]+/);
+  for (const line of lines) {
+    const nums = extractRokNumbersInLine(line);
+    if (nums.length < 2) continue;
+
+    // Alliance bracket pattern: "[3801]Justice Risen 1 796 955 517 77 676 008"
+    if (/\[\d{2,5}\]/.test(line)) {
+      if (!out.killPoints && nums[0]) out.killPoints = nums[0];
+      if (!out.power && nums[1]) out.power = nums[1];
+      continue;
+    }
+
+    // Civilization row: one substantive Cyrillic word + 2 numbers. The
+    // second number is the lifetime max valor.
+    const cyrillicWords = (line.match(/[А-Яа-яЁё]{4,}/g) ?? []).filter(
+      (w) =>
+        !/убийств|доблести|правитель|альянс|цивилизация|ускорение|ускорения|тип|ресурс|ресурсы|время|общая|продолжительность/i.test(
+          w,
+        ),
+    );
+    if (cyrillicWords.length === 1 && nums.length >= 2) {
+      if (!out.maxValorPoints && nums[1]) out.maxValorPoints = nums[1];
+    }
+  }
+}
+
+/**
+ * Pull RoK-shaped numbers out of a single line, returning them as
+ * cleaned display strings ("1 796 955 517", "77.6M", "21").
+ */
+function extractRokNumbersInLine(line: string): string[] {
+  const matches = line.match(NUMBER_RE_GLOBAL) ?? [];
+  return matches
+    .map((m) => cleanNumber(m))
+    // Drop tiny noise (single digits / 2-digit ids that aren't useful here).
+    .filter((s) => /\d{3}/.test(s) || /[KMBGT]$/i.test(s));
 }
 
 /**

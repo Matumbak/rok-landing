@@ -27,8 +27,11 @@ async function getWorker(): Promise<Worker> {
       const worker = await createWorker(["rus", "eng"], undefined, {
         logger: () => {},
       });
+      // PSM 3 (Fully Automatic Page Segmentation) does better than the
+      // single-block mode 6 on RoK's irregularly-laid-out modals where
+      // labels and values sit in different blocks separated by icons.
       await worker.setParameters({
-        tessedit_pageseg_mode: "6" as unknown as never, // PSM_SINGLE_BLOCK
+        tessedit_pageseg_mode: "3" as unknown as never,
       });
       return worker;
     })();
