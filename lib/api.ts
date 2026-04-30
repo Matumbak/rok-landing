@@ -121,6 +121,98 @@ export async function fetchMedia(): Promise<ApiMediaItem[]> {
   return data?.items ?? [];
 }
 
+export type MigrationScreenshot = {
+  url: string;
+  pathname: string;
+  size?: number;
+  contentType?: string;
+  category: "account" | "commander" | "resource" | "dkp" | "other";
+  label?: string;
+};
+
+export type MigrationSubmitBody = {
+  governorId: string;
+  nickname: string;
+  currentKingdom: string;
+  currentAlliance?: string | null;
+  power: string;
+  killPoints: string;
+  vipLevel: string;
+  discordHandle: string;
+
+  t1Kills?: string | null;
+  t2Kills?: string | null;
+  t3Kills?: string | null;
+  t4Kills?: string | null;
+  t5Kills?: string | null;
+  deaths?: string | null;
+  healed?: string | null;
+  resourcesGathered?: string | null;
+  food?: string | null;
+  wood?: string | null;
+  stone?: string | null;
+  gold?: string | null;
+  speedupsUniversal?: string | null;
+  speedupsConstruction?: string | null;
+  speedupsResearch?: string | null;
+  speedupsTraining?: string | null;
+  speedupsHealing?: string | null;
+  speedupsMinutes?: string | null;
+  speedupsBreakdown?: Record<string, string> | null;
+
+  marches?: number | null;
+  equipmentSummary?: Record<string, string> | null;
+  previousKvkDkp?: string | null;
+
+  activityHours?: string | null;
+  timezone?: string | null;
+  hasScrolls: boolean;
+  reason?: string | null;
+
+  /** Concatenated OCR text from the client-side Tesseract pass. */
+  ocrRawText?: string | null;
+
+  screenshots: MigrationScreenshot[];
+};
+
+export async function uploadScreenshot(args: {
+  blob: Blob;
+  contentType: string;
+  filename: string;
+  sessionId: string;
+}): Promise<{ url: string; pathname: string; size: number }> {
+  const fd = new FormData();
+  fd.append(
+    "file",
+    new File([args.blob], args.filename, { type: args.contentType }),
+  );
+  fd.append("sessionId", args.sessionId);
+  const res = await fetch(`${API_URL}/api/uploads/screenshot`, {
+    method: "POST",
+    body: fd,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error ?? `upload_failed_${res.status}`);
+  }
+  return res.json();
+}
+
+export async function submitMigrationApplication(
+  body: MigrationSubmitBody,
+): Promise<{ id: string; createdAt: string }> {
+  const res = await fetch(`${API_URL}/api/migration-applications`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error ?? `submit_failed_${res.status}`);
+  }
+  return res.json();
+}
+
 export async function fetchDkp(query: DkpQuery = {}): Promise<DkpListResponse> {
   const qs = new URLSearchParams();
   if (query.search) qs.set("search", query.search);
