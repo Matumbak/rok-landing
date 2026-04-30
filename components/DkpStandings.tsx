@@ -69,7 +69,11 @@ const formatBigNum = (raw: string | number | null | undefined) => {
     }
     break;
   }
-  return Math.round(n).toLocaleString("ru-RU");
+  const sign = n < 0 ? "-" : "";
+  const grouped = Math.round(Math.abs(n))
+    .toString()
+    .replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  return sign + grouped;
 };
 
 const formatCellValue = (
