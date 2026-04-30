@@ -17,6 +17,8 @@
 import { API_URL } from "@/lib/api";
 
 export interface ParsedRokScreen {
+  governorId: string | null;
+  nickname: string | null;
   power: string | null;
   killPoints: string | null;
   vipLevel: string | null;

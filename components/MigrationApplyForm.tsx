@@ -33,6 +33,8 @@ const MAX_FILES = 30;
 
 /** FormState keys OCR can fill. */
 const OCR_FIELD_KEYS = [
+  "governorId",
+  "nickname",
   "power",
   "killPoints",
   "t4Kills",
