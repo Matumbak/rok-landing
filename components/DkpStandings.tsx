@@ -192,7 +192,36 @@ export function DkpStandings() {
           </select>
         </div>
 
-        <Card className="hover:border-accent/40 transition-colors">
+        {/* Mobile: card layout. Sort pills on top, cards below. Cards
+            iterate over columns dynamically, so any new xlsx column shape
+            renders without code changes. */}
+        <div className="md:hidden">
+          {columns.length > 0 && (
+            <MobileSortPills
+              columns={columns}
+              sortBy={query.sortBy ?? "rank"}
+              sortOrder={query.sortOrder ?? "asc"}
+              onToggle={toggleSort}
+            />
+          )}
+          <div className="mt-3 space-y-3">
+            {loading && items.length === 0 && (
+              <div className="text-center text-muted py-12 border border-border-bronze/60 bg-card/40">
+                Loading…
+              </div>
+            )}
+            {!loading && items.length === 0 && (
+              <div className="text-center text-muted py-12 border border-border-bronze/60 bg-card/40">
+                No governors match the current filters.
+              </div>
+            )}
+            {items.map((row) => (
+              <DkpCard key={row.id} row={row} columns={columns} />
+            ))}
+          </div>
+        </div>
+
+        <Card className="hidden md:block hover:border-accent/40 transition-colors">
           <Table>
             <TableHeader>
               <TableRow>
@@ -435,6 +464,156 @@ function RankBadge({ rank }: { rank: number }) {
     <span className="inline-flex h-9 w-9 items-center justify-center border border-accent/50 text-accent font-display text-sm tracking-[0.05em]">
       {rank}
     </span>
+  );
+}
+
+/* ── mobile card layout ──────────────────────────────────────────── */
+
+const NATIVE_KEYS = new Set(["rank", "nickname", "governorId", "alliance"]);
+const DKP_LABEL_RE = /\bdkp(\s*score)?\b/i;
+
+/**
+ * Curated whitelist for the mobile sort pills. The DKP table itself is
+ * fully dynamic (any xlsx column type renders), but exposing every column
+ * as a sort pill produces noise — long-tail metrics like Trade Ratio /
+ * Honor Points aren't stable across scans and overload the filter row.
+ *
+ * Each regex matches the column label case-insensitively. Order = display
+ * order. A pill only appears if a current-scan column matches.
+ */
+const PRIORITY_PILL_LABEL_RES: RegExp[] = [
+  /\bdkp(\s*score)?\b/i, //   DKP / DKP Score
+  /\bacclaim\b/i, //          Acclaim
+  /\bt4\s*kill/i, //          T4 Kills
+  /\bt5\s*kill/i, //          T5 Kills
+  /\bt4\s*\+\s*t5/i, //       T4+T5 KP
+  /\b(?:all\s*)?dead/i, //    All Deads
+];
+
+function isPriorityPill(col: DkpColumn): boolean {
+  return PRIORITY_PILL_LABEL_RES.some((re) => re.test(col.label));
+}
+
+function DkpCard({
+  row,
+  columns,
+}: {
+  row: ApiDkpRow;
+  columns: DkpColumn[];
+}) {
+  // Strip the four "native" identity columns — they're rendered in the
+  // header. Everything else is generic: label + formatted value.
+  const dataCols = columns.filter((c) => !NATIVE_KEYS.has(c.key));
+  // Find a "DKP" column to highlight — fuzzy label match so it works for
+  // "DKP", "DKP Score", "Dkp" etc. without code changes per scan.
+  const dkpCol = dataCols.find((c) => DKP_LABEL_RE.test(c.label));
+  const restCols = dataCols.filter((c) => c !== dkpCol);
+
+  return (
+    <div className="relative border border-border-bronze/60 bg-card/70 backdrop-blur-sm p-4">
+      <div
+        className="absolute inset-0 bg-grid opacity-[0.12] pointer-events-none"
+        aria-hidden
+      />
+      <div className="relative flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <RankBadge rank={row.rank} />
+          <div className="min-w-0">
+            <div className="font-display text-base tracking-[0.08em] uppercase text-foreground truncate">
+              {row.nickname}
+            </div>
+            <div className="text-[10px] text-muted mt-0.5 tracking-[0.15em] uppercase">
+              ID {row.governorId}
+            </div>
+          </div>
+        </div>
+        {row.alliance && (
+          <span className="shrink-0 inline-flex items-center px-2 h-6 border border-accent/40 text-accent text-[11px] font-display tracking-[0.12em] uppercase">
+            {row.alliance}
+          </span>
+        )}
+      </div>
+
+      {dkpCol && (
+        <div className="relative mt-4 flex items-baseline justify-between gap-3 border-t border-border-bronze/40 pt-3">
+          <span className="text-[10px] uppercase tracking-[0.18em] text-muted">
+            {dkpCol.label}
+          </span>
+          <span className="font-display text-2xl text-accent-bright tracking-[0.04em]">
+            {formatCellValue(row[dkpCol.key], dkpCol.type)}
+          </span>
+        </div>
+      )}
+
+      {restCols.length > 0 && (
+        <dl className="relative mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+          {restCols.map((c) => (
+            <div
+              key={c.key}
+              className="flex items-baseline justify-between gap-2 min-w-0"
+            >
+              <dt className="text-[10px] uppercase tracking-[0.15em] text-muted truncate">
+                {c.label}
+              </dt>
+              <dd className="font-display tracking-[0.04em] text-foreground shrink-0">
+                {formatCellValue(row[c.key], c.type)}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      )}
+    </div>
+  );
+}
+
+function MobileSortPills(props: {
+  columns: DkpColumn[];
+  sortBy: string;
+  sortOrder: "asc" | "desc";
+  onToggle: (key: string) => void;
+}) {
+  // Stable curated subset — see PRIORITY_PILL_LABEL_RES rationale above.
+  // Sorted by the priority array order so DKP Score is always first.
+  const priority = props.columns.filter(
+    (c) => c.sortable && isPriorityPill(c),
+  );
+  priority.sort((a, b) => {
+    const ai = PRIORITY_PILL_LABEL_RES.findIndex((re) => re.test(a.label));
+    const bi = PRIORITY_PILL_LABEL_RES.findIndex((re) => re.test(b.label));
+    return ai - bi;
+  });
+  const sortable = priority;
+  if (sortable.length === 0) return null;
+  return (
+    <div className="-mx-6 px-6 flex items-center gap-2 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <span className="shrink-0 text-[10px] uppercase tracking-[0.18em] text-muted/70 font-display">
+        Sort
+      </span>
+      {sortable.map((c) => {
+        const active = props.sortBy === c.key;
+        return (
+          <button
+            key={c.key}
+            type="button"
+            onClick={() => props.onToggle(c.key)}
+            className={cn(
+              "shrink-0 inline-flex items-center gap-1 h-8 px-3 border text-[11px] uppercase tracking-[0.12em] font-display whitespace-nowrap transition-colors",
+              active
+                ? "border-accent bg-accent/10 text-accent"
+                : "border-border-bronze/60 text-muted hover:text-foreground hover:border-border-bronze",
+            )}
+          >
+            {c.label}
+            {active &&
+              (props.sortOrder === "asc" ? (
+                <ArrowUp className="h-3 w-3" />
+              ) : (
+                <ArrowDown className="h-3 w-3" />
+              ))}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 

@@ -39,7 +39,6 @@ const OCR_FIELD_KEYS = [
   "t4Kills",
   "t5Kills",
   "deaths",
-  "healed",
   "food",
   "wood",
   "stone",
@@ -50,6 +49,7 @@ const OCR_FIELD_KEYS = [
   "speedupsTraining",
   "speedupsHealing",
   "vipLevel",
+  "maxValorPoints",
 ] as const;
 type OcrFieldKey = (typeof OCR_FIELD_KEYS)[number];
 
@@ -84,10 +84,12 @@ interface FormState {
   vipLevel: string;
   discordHandle: string;
 
+  // KvK record (from profile screen). OCR-fillable, optional.
+  maxValorPoints: string;
+
   t4Kills: string;
   t5Kills: string;
   deaths: string;
-  healed: string;
 
   food: string;
   wood: string;
@@ -120,10 +122,11 @@ const EMPTY_STATE: FormState = {
   vipLevel: "",
   discordHandle: "",
 
+  maxValorPoints: "",
+
   t4Kills: "",
   t5Kills: "",
   deaths: "",
-  healed: "",
 
   food: "",
   wood: "",
@@ -400,10 +403,11 @@ export function MigrationApplyForm() {
           vipLevel: state.vipLevel.trim(),
           discordHandle: state.discordHandle.trim(),
 
+          maxValorPoints: state.maxValorPoints.trim() || null,
+
           t4Kills: state.t4Kills.trim() || null,
           t5Kills: state.t5Kills.trim() || null,
           deaths: state.deaths.trim() || null,
-          healed: state.healed.trim() || null,
           food: state.food.trim() || null,
           wood: state.wood.trim() || null,
           stone: state.stone.trim() || null,
@@ -535,9 +539,22 @@ export function MigrationApplyForm() {
       </Section>
 
       <Section
-        title="Account stats"
-        subtitle="Upload account screenshots first — fields below auto-fill."
+        title="Account & profile"
+        subtitle="Drop your governor profile, kill data popup, troop details, individual stats and lost troops screens — fields below auto-fill via OCR. Edit anything that came out wrong."
       >
+        <DropZone
+          category="account"
+          onFiles={(fs) => addFiles(fs, "account")}
+          remaining={MAX_FILES - files.length}
+        />
+        <Gallery
+          files={files.filter((f) => f.category === "account")}
+          onRemove={removeFile}
+        />
+
+        <p className="text-[11px] uppercase tracking-wider text-muted mt-6">
+          Core
+        </p>
         <Grid>
           <Field
             label="Power"
@@ -576,35 +593,35 @@ export function MigrationApplyForm() {
             placeholder="3.2M"
             extracted={extracted.has("deaths")}
           />
+        </Grid>
+
+        <p className="text-[11px] uppercase tracking-wider text-muted mt-6">
+          KvK record
+        </p>
+        <Grid>
           <Field
-            label="Troops healed"
-            value={state.healed}
-            onChange={(v) => update("healed", v)}
-            placeholder="9.5M"
-            extracted={extracted.has("healed")}
+            label="Max valor (lifetime)"
+            value={state.maxValorPoints}
+            onChange={(v) => update("maxValorPoints", v)}
+            placeholder="7.2M"
+            extracted={extracted.has("maxValorPoints")}
           />
         </Grid>
-      </Section>
-
-      <Section
-        title="Account screenshots"
-        subtitle="Profile, dead troops, individual stats, lost troops."
-      >
-        <DropZone
-          category="account"
-          onFiles={(fs) => addFiles(fs, "account")}
-          remaining={MAX_FILES - files.length}
-        />
-        <Gallery
-          files={files.filter((f) => f.category === "account")}
-          onRemove={removeFile}
-        />
       </Section>
 
       <Section
         title="Commanders & equipment"
         subtitle="Drop screenshots of your top commanders and their gear — officers review them by eye, no need to type names or pairs."
       >
+        <DropZone
+          category="commander"
+          onFiles={(fs) => addFiles(fs, "commander")}
+          remaining={MAX_FILES - files.length}
+        />
+        <Gallery
+          files={files.filter((f) => f.category === "commander")}
+          onRemove={removeFile}
+        />
         <Grid>
           <Field
             label="Marches"
@@ -615,22 +632,23 @@ export function MigrationApplyForm() {
             placeholder="6"
           />
         </Grid>
-        <DropZone
-          category="commander"
-          onFiles={(fs) => addFiles(fs, "commander")}
-          remaining={MAX_FILES - files.length}
-        />
-        <Gallery
-          files={files.filter((f) => f.category === "commander")}
-          onRemove={removeFile}
-        />
       </Section>
 
       <Section
-        title="Resources"
-        subtitle="Open the in-game «Your Resources & Speedups» modal — screenshot both tabs."
+        title="Resources & speedups"
+        subtitle="Open the in-game «Your Resources & Speedups» modal — screenshot both tabs, drop them here, then verify the auto-filled values below."
       >
-        <p className="text-[11px] uppercase tracking-wider text-muted">
+        <DropZone
+          category="resource"
+          onFiles={(fs) => addFiles(fs, "resource")}
+          remaining={MAX_FILES - files.length}
+        />
+        <Gallery
+          files={files.filter((f) => f.category === "resource")}
+          onRemove={removeFile}
+        />
+
+        <p className="text-[11px] uppercase tracking-wider text-muted mt-6">
           Resources — use the «Total» column
         </p>
         <Grid>
@@ -672,62 +690,44 @@ export function MigrationApplyForm() {
             label="Construction"
             value={state.speedupsConstruction}
             onChange={(v) => update("speedupsConstruction", v)}
-            placeholder="63 дн 12 ч 20 м"
+            placeholder="63d 12h 20m"
             extracted={extracted.has("speedupsConstruction")}
           />
           <Field
             label="Research"
             value={state.speedupsResearch}
             onChange={(v) => update("speedupsResearch", v)}
-            placeholder="88 дн 2 ч 28 м"
+            placeholder="88d 2h 28m"
             extracted={extracted.has("speedupsResearch")}
           />
           <Field
             label="Training"
             value={state.speedupsTraining}
             onChange={(v) => update("speedupsTraining", v)}
-            placeholder="3 дн 20 ч 49 м"
+            placeholder="3d 20h 49m"
             extracted={extracted.has("speedupsTraining")}
           />
           <Field
             label="Healing"
             value={state.speedupsHealing}
             onChange={(v) => update("speedupsHealing", v)}
-            placeholder="6 дн 5 ч 55 м"
+            placeholder="6d 5h 55m"
             extracted={extracted.has("speedupsHealing")}
           />
           <Field
             label="Universal"
             value={state.speedupsUniversal}
             onChange={(v) => update("speedupsUniversal", v)}
-            placeholder="340 дн 18 ч 56 м"
+            placeholder="340d 18h 56m"
             extracted={extracted.has("speedupsUniversal")}
           />
         </Grid>
-
-        <DropZone
-          category="resource"
-          onFiles={(fs) => addFiles(fs, "resource")}
-          remaining={MAX_FILES - files.length}
-        />
-        <Gallery
-          files={files.filter((f) => f.category === "resource")}
-          onRemove={removeFile}
-        />
       </Section>
 
       <Section
         title="Previous KvK DKP (optional)"
         subtitle="Last KvK personal score screen — helps us gauge your KvK rhythm."
       >
-        <Grid>
-          <Field
-            label="Previous KvK DKP"
-            value={state.previousKvkDkp}
-            onChange={(v) => update("previousKvkDkp", v)}
-            placeholder="142M"
-          />
-        </Grid>
         <DropZone
           category="dkp"
           onFiles={(fs) => addFiles(fs, "dkp")}
@@ -737,6 +737,14 @@ export function MigrationApplyForm() {
           files={files.filter((f) => f.category === "dkp")}
           onRemove={removeFile}
         />
+        <Grid>
+          <Field
+            label="Previous KvK DKP"
+            value={state.previousKvkDkp}
+            onChange={(v) => update("previousKvkDkp", v)}
+            placeholder="142M"
+          />
+        </Grid>
       </Section>
 
       <Section

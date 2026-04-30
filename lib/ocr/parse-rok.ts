@@ -22,13 +22,14 @@ export type ParsedStats = Partial<{
   t4Kills: string;
   t5Kills: string;
   deaths: string;
-  healed: string;
   resourcesGathered: string;
   food: string;
   wood: string;
   stone: string;
   gold: string;
   vipLevel: string;
+  // Profile screen — KvK record.
+  maxValorPoints: string;
   // Speedups — duration strings, parsed server-side via parseRokDuration.
   speedupsUniversal: string;
   speedupsConstruction: string;
@@ -47,6 +48,9 @@ interface FieldSpec {
   /** When true, parse a duration ("63 дн 12 ч 20 м") instead of a number.
    *  We just keep the raw substring; the API converts to minutes. */
   duration?: boolean;
+  /** When true, capture the next text token (word-ish) instead of a
+   *  number. Used for Civilization which is a localized name. */
+  text?: boolean;
 }
 
 const FIELDS: FieldSpec[] = [
@@ -129,10 +133,6 @@ const FIELDS: FieldSpec[] = [
     ],
   },
   {
-    key: "healed",
-    aliases: ["исцелено", "вылечено", "healed", "troops healed"],
-  },
-  {
     key: "resourcesGathered",
     aliases: [
       "собрано ресурсов",
@@ -185,37 +185,82 @@ const FIELDS: FieldSpec[] = [
   },
 
   { key: "vipLevel", aliases: ["уровень vip", "vip level", "vip lv", "vip lvl"] },
+
+  // Profile screen — only Max valor matters per recruitment policy.
+  {
+    key: "maxValorPoints",
+    aliases: [
+      "макс. кол-во очк. доблести",
+      "макс. кол-во очков доблести",
+      "максимум очков доблести",
+      "max valor",
+      "maximum valor",
+    ],
+  },
 ];
 
 /** Match RoK numbers (with thousand separators or RoK suffix). */
 const NUMBER_RE_GLOBAL =
-  /(-?\d{1,3}(?:[.,\s]\d{3})*(?:[.,]\d+)?[KMBGTkmbgtКМБТkmbtкмбт]?|\d+(?:[.,]\d+)?[KMBGTkmbgtКМБТ])/g;
+  /(-?\d{1,3}(?:[.,\s ]\d{3})+(?:[.,]\d+)?[KMBGTkmbgtКМБТkmbtкмбт]?|\d+(?:[.,]\d+)?[KMBGTkmbgtКМБТ]|\d+(?:[.,]\d+)?)/g;
 
-/** Match a duration substring in the OCR window. */
-const DURATION_RE =
-  /(?:\d+\s*(?:дн\.?|дней|d|day|days)\s*)?(?:\d+\s*(?:ч\.?|час|часа|часов|h|hr|hour|hours)\s*)?(?:\d+\s*(?:мин\.?|минут|минуты|м\.?|m|min|minute|minutes)\s*)?/i;
-const DURATION_HAS_UNIT =
-  /(?:дн|дней|d|day|days|ч|час|h|hr|hour|hours|м\b|мин|минут|m\b|min)/i;
+/**
+ * Duration regex — at least one unit (day/hour/minute) must be present.
+ * Anchored alternatives prevent the empty-match fallback that v2 hit.
+ */
+const DURATION_COMPONENT =
+  /\d+\s*(?:дн\.?|дней|d|day|days|ч\.?|час[ао]?в?|h|hr|hrs|hour|hours|мин\.?|минут[ыа]?|м\.?|m|min|mins|minute|minutes)\b/gi;
 
-const WINDOW = 150;
+/** Strip alias-content from `mutable` after a successful capture so later
+ *  aliases (especially the generic "ускорение") don't re-match the same line. */
+function blank(s: string, start: number, end: number): string {
+  return s.slice(0, start) + " ".repeat(end - start) + s.slice(end);
+}
+
+/** Default search horizon when no newline terminates the slice early. */
+const FAR_WINDOW = 200;
 
 export function parseRokScreens(text: string): ParsedStats {
   if (!text) return {};
-  const flat = text.replace(/\s+/g, " ").toLowerCase();
+  // Preserve newlines: they're our row boundary in the resource modal and
+  // the speedups list, where columns / labels are split by newline by
+  // Tesseract. Collapsing whitespace earlier produced the "330.7K" cross-
+  // contamination from the in-game header (rightmost-in-window picked up
+  // text from an unrelated row).
+  let mutable = text.toLowerCase().replace(/[ \t]+/g, " ");
   const out: ParsedStats = {};
 
   for (const field of FIELDS) {
     if (out[field.key]) continue;
     for (const alias of field.aliases) {
-      const idx = flat.indexOf(alias);
+      const idx = mutable.indexOf(alias);
       if (idx === -1) continue;
-      const slice = flat.slice(idx + alias.length, idx + alias.length + WINDOW);
+
+      // Slice up to the next newline (single-line) or FAR_WINDOW for fields
+      // that legitimately span lines (text capture, far-right column).
+      const tail = mutable.slice(idx + alias.length);
+      const nlIdx = tail.search(/[\n\r]/);
+      const sliceEnd = nlIdx === -1 ? Math.min(tail.length, FAR_WINDOW) : nlIdx;
+      const slice = tail.slice(0, sliceEnd);
 
       if (field.duration) {
-        const dMatch = slice.match(DURATION_RE);
-        const dStr = dMatch?.[0]?.trim() ?? "";
-        if (dStr && DURATION_HAS_UNIT.test(dStr)) {
-          out[field.key] = dStr;
+        const matches = slice.match(DURATION_COMPONENT);
+        if (!matches || matches.length === 0) continue;
+        const joined = matches.join(" ").trim();
+        out[field.key] = joined;
+        // Consume the alias + duration so the universal "ускорение " alias
+        // doesn't grab this same line on its own iteration.
+        mutable = blank(mutable, idx, idx + alias.length + sliceEnd);
+        break;
+      }
+
+      if (field.text) {
+        const tMatch = slice
+          .replace(/^[^\p{L}]+/u, "")
+          .match(/^([\p{L}][\p{L} \-']{0,30})/u);
+        const t = tMatch?.[1]?.trim();
+        if (t && t.length > 1) {
+          out[field.key] = t.charAt(0).toUpperCase() + t.slice(1);
+          mutable = blank(mutable, idx, idx + alias.length + sliceEnd);
           break;
         }
         continue;
@@ -227,6 +272,7 @@ export function parseRokScreens(text: string): ParsedStats {
         ? matches[matches.length - 1]
         : matches[0];
       out[field.key] = cleanNumber(picked);
+      mutable = blank(mutable, idx, idx + alias.length + sliceEnd);
       break;
     }
   }
@@ -248,7 +294,10 @@ function cleanNumber(raw: string): string {
     .replace(/В$/i, "B") // Cyrillic В looks identical to B in the game font
     .replace(/Т$/i, "T")
     .replace(/[lI](?=\d)/g, "1")
-    .replace(/[oO](?=\d)/g, "0");
+    .replace(/[oO](?=\d)/g, "0")
+    // RoK never has leading zeros — strip them to undo OCR icon-noise like
+    // "O330.7K" → "0330.7K" → "330.7K".
+    .replace(/^0+(?=\d)/, "");
 }
 
 export function mergeStats(parts: ParsedStats[]): ParsedStats {

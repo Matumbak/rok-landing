@@ -140,13 +140,15 @@ export type MigrationSubmitBody = {
   vipLevel: string;
   discordHandle: string;
 
+  // Profile screen — Max valor (lifetime), the only KvK proxy we keep.
+  maxValorPoints?: string | null;
+
   t1Kills?: string | null;
   t2Kills?: string | null;
   t3Kills?: string | null;
   t4Kills?: string | null;
   t5Kills?: string | null;
   deaths?: string | null;
-  healed?: string | null;
   resourcesGathered?: string | null;
   food?: string | null;
   wood?: string | null;
