@@ -182,24 +182,44 @@ export function MigrationApplyForm() {
   /** Concatenated OCR text from every successfully OCR'd screenshot. */
   const [ocrRawText, setOcrRawText] = useState<string>("");
 
-  // Restore draft from localStorage on mount.
+  // Restore draft from localStorage on mount. We persist both the form
+  // state AND the `extracted` set so a reload doesn't make OCR think
+  // every field was user-typed (which would skip future autofills).
   useEffect(() => {
     if (typeof window === "undefined") return;
     const raw = localStorage.getItem(DRAFT_KEY);
-    if (!raw) return;
-    try {
-      const parsed = JSON.parse(raw) as Partial<FormState>;
-      setState((s) => ({ ...s, ...parsed }));
-    } catch {
-      // ignore
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw) as Partial<FormState>;
+        setState((s) => ({ ...s, ...parsed }));
+      } catch {
+        // ignore
+      }
+    }
+    const extRaw = localStorage.getItem(`${DRAFT_KEY}-extracted`);
+    if (extRaw) {
+      try {
+        const arr = JSON.parse(extRaw) as string[];
+        setExtracted(new Set(arr as OcrFieldKey[]));
+      } catch {
+        // ignore
+      }
     }
   }, []);
 
-  // Persist draft on every change (text fields only — files stay in memory).
+  // Persist draft + extracted set on every change.
   useEffect(() => {
     if (typeof window === "undefined") return;
     localStorage.setItem(DRAFT_KEY, JSON.stringify(state));
   }, [state]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(
+      `${DRAFT_KEY}-extracted`,
+      JSON.stringify([...extracted]),
+    );
+  }, [extracted]);
 
   const update = useCallback(
     <K extends keyof FormState>(key: K, value: FormState[K]) => {
@@ -468,6 +488,7 @@ export function MigrationApplyForm() {
         if (typeof window !== "undefined") {
           localStorage.removeItem(DRAFT_KEY);
           localStorage.removeItem(`${DRAFT_KEY}-session`);
+          localStorage.removeItem(`${DRAFT_KEY}-extracted`);
         }
       } catch (err) {
         setSubmitError((err as Error).message ?? "submit_failed");

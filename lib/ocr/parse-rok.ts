@@ -202,9 +202,19 @@ const FIELDS: FieldSpec[] = [
   },
 ];
 
-/** Match RoK numbers (with thousand separators or RoK suffix). */
+/**
+ * Match RoK numbers.
+ *
+ *   alt 1 — at least *three* digit groups separated by space/dot/comma
+ *           ("1 796 955 517" / "1.234.567"). Two-group shapes like
+ *           "208 368" are intentionally NOT matched here so resource-
+ *           modal columns stay separate.
+ *   alt 2 — bare digits with optional decimal + magnitude letter (Latin
+ *           or Cyrillic, any case, including lowercase Cyrillic м/б/в/к).
+ *   alt 3 — bare digits with optional decimal, no magnitude.
+ */
 const NUMBER_RE_GLOBAL =
-  /(-?\d{1,3}(?:[.,\s ]\d{3})+(?:[.,]\d+)?[KMBGTkmbgtКМБТkmbtкмбт]?|\d+(?:[.,]\d+)?[KMBGTkmbgtКМБТ]|\d+(?:[.,]\d+)?)/g;
+  /(-?\d{1,3}(?:[.,\s ]\d{3}){2,}(?:[.,]\d+)?[KMBGTkmbgtКМБВТкмбвт]?|\d+(?:[.,]\d+)?[KMBGTkmbgtКМБВТкмбвт]|\d+(?:[.,]\d+)?)/g;
 
 /**
  * Duration regex — at least one unit (day/hour/minute) must be present.
