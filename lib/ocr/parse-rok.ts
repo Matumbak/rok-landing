@@ -231,6 +231,8 @@ export function parseRokScreens(text: string): ParsedStats {
   // text from an unrelated row).
   let mutable = text.toLowerCase().replace(/[ \t]+/g, " ");
   const out: ParsedStats = {};
+  /* eslint-disable no-console */
+  console.groupCollapsed("[OCR] parseRokScreens");
 
   for (const field of FIELDS) {
     if (out[field.key]) continue;
@@ -247,9 +249,17 @@ export function parseRokScreens(text: string): ParsedStats {
 
       if (field.duration) {
         const matches = slice.match(DURATION_COMPONENT);
-        if (!matches || matches.length === 0) continue;
+        if (!matches || matches.length === 0) {
+          console.log(
+            `[OCR] ${field.key} alias="${alias}" → no duration in slice="${slice.slice(0, 80)}"`,
+          );
+          continue;
+        }
         const joined = matches.join(" ").trim();
         out[field.key] = joined;
+        console.log(
+          `[OCR] ${field.key} ✓ alias="${alias}" → "${joined}" (slice="${slice.slice(0, 80)}")`,
+        );
         // Consume the alias + duration so the universal "ускорение " alias
         // doesn't grab this same line on its own iteration.
         mutable = blank(mutable, idx, idx + alias.length + sliceEnd);
@@ -263,6 +273,9 @@ export function parseRokScreens(text: string): ParsedStats {
         const t = tMatch?.[1]?.trim();
         if (t && t.length > 1) {
           out[field.key] = t.charAt(0).toUpperCase() + t.slice(1);
+          console.log(
+            `[OCR] ${field.key} ✓ alias="${alias}" → "${out[field.key]}"`,
+          );
           mutable = blank(mutable, idx, idx + alias.length + sliceEnd);
           break;
         }
@@ -270,16 +283,28 @@ export function parseRokScreens(text: string): ParsedStats {
       }
 
       const matches = slice.match(NUMBER_RE_GLOBAL);
-      if (!matches || matches.length === 0) continue;
+      if (!matches || matches.length === 0) {
+        console.log(
+          `[OCR] ${field.key} alias="${alias}" → no number in slice="${slice.slice(0, 80)}"`,
+        );
+        continue;
+      }
       const picked = field.rightmost
         ? matches[matches.length - 1]
         : matches[0];
-      out[field.key] = cleanNumber(picked);
+      const cleaned = cleanNumber(picked);
+      out[field.key] = cleaned;
+      console.log(
+        `[OCR] ${field.key} ✓ alias="${alias}" → "${cleaned}" picked from [${matches.join(", ")}] (slice="${slice.slice(0, 80)}")`,
+      );
       mutable = blank(mutable, idx, idx + alias.length + sliceEnd);
       break;
     }
   }
 
+  console.log("[OCR] final stats:", out);
+  console.groupEnd();
+  /* eslint-enable no-console */
   return out;
 }
 

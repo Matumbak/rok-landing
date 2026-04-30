@@ -228,14 +228,35 @@ export function MigrationApplyForm() {
       setState((s) => {
         const next = { ...s };
         const justFilled = new Set<OcrFieldKey>();
+        const skipped: Record<string, string> = {};
         for (const key of OCR_FIELD_KEYS) {
           const val = stats[key as keyof ParsedStats];
           if (!val) continue;
           const current = s[key];
-          if (current && !extracted.has(key)) continue; // user-edited
+          if (current && !extracted.has(key)) {
+            skipped[key] = `user-typed "${current}", parsed "${val}"`;
+            continue;
+          }
           next[key] = val;
           justFilled.add(key);
         }
+        /* eslint-disable no-console */
+        console.groupCollapsed(
+          `[OCR] applyOcr → filled ${justFilled.size}, skipped ${Object.keys(skipped).length}`,
+        );
+        if (justFilled.size > 0) {
+          console.log(
+            "[OCR] filled:",
+            Object.fromEntries(
+              [...justFilled].map((k) => [k, stats[k as keyof ParsedStats]]),
+            ),
+          );
+        }
+        if (Object.keys(skipped).length > 0) {
+          console.log("[OCR] skipped (user-typed wins):", skipped);
+        }
+        console.groupEnd();
+        /* eslint-enable no-console */
         if (justFilled.size > 0) {
           setExtracted((prev) => {
             const merged = new Set(prev);

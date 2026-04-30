@@ -38,8 +38,22 @@ async function getWorker(): Promise<Worker> {
 
 export async function extractText(image: Blob | string): Promise<string> {
   const worker = await getWorker();
+  const t0 = performance.now();
   const result = await worker.recognize(image);
-  return result.data.text;
+  const text = result.data.text;
+  const elapsed = Math.round(performance.now() - t0);
+  // Group log so it's collapsible in DevTools. Full raw text first so the
+  // user can copy-paste it back when reporting bad parses.
+  /* eslint-disable no-console */
+  console.groupCollapsed(
+    `[OCR] extracted ${text.length} chars in ${elapsed}ms`,
+  );
+  console.log("--- RAW TEXT ---");
+  console.log(text);
+  console.log("--- END RAW ---");
+  console.groupEnd();
+  /* eslint-enable no-console */
+  return text;
 }
 
 /**
