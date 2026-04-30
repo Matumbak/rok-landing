@@ -142,11 +142,14 @@ const FIELDS: FieldSpec[] = [
     ],
   },
 
-  // Resource modal — two-column layout, take "Всего" (rightmost)
-  { key: "food", aliases: ["пища", "еда", "food"], rightmost: true },
-  { key: "wood", aliases: ["дерево", "wood"], rightmost: true },
-  { key: "stone", aliases: ["камень", "stone"], rightmost: true },
-  { key: "gold", aliases: ["золото", "gold"], rightmost: true },
+  // Resource modal — two-column layout. Take the FIRST number after the
+  // label ("От предметов" / "From items") — those are the movable resources
+  // a governor can take during migration. The rightmost column ("Всего" /
+  // "Total") includes warehouse stock that doesn't transfer.
+  { key: "food", aliases: ["пища", "еда", "food"] },
+  { key: "wood", aliases: ["дерево", "wood"] },
+  { key: "stone", aliases: ["камень", "stone"] },
+  { key: "gold", aliases: ["золото", "gold"] },
 
   // Speedups — duration strings
   {

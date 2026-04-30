@@ -32,16 +32,44 @@ import { cn } from "@/lib/utils";
 
 /* ── value formatting ─────────────────────────────────────────────── */
 
+/**
+ * Display a number in the smallest faithful form:
+ *   2 200 000 000  → "2.2B"             (clean → abbreviate)
+ *   2 215 184 198  → "2 215 184 198"    (no clean abbrev → show full)
+ *
+ * Tries 0, 1, then 2 decimals at the largest applicable unit and only
+ * accepts the abbreviation when it round-trips to the original integer.
+ * Otherwise falls back to digit-grouped display so no precision is lost.
+ */
 const formatBigNum = (raw: string | number | null | undefined) => {
   if (raw == null || raw === "") return "—";
   const n = Number(raw);
   if (!Number.isFinite(n)) return String(raw);
+  if (n === 0) return "0";
+
   const abs = Math.abs(n);
-  const sign = n < 0 ? "-" : "";
-  if (abs >= 1e9) return `${sign}${(abs / 1e9).toFixed(2)}B`;
-  if (abs >= 1e6) return `${sign}${(abs / 1e6).toFixed(2)}M`;
-  if (abs >= 1e3) return `${sign}${(abs / 1e3).toFixed(1)}K`;
-  return n.toLocaleString("en-US");
+  const units: Array<readonly [string, number]> = [
+    ["T", 1e12],
+    ["B", 1e9],
+    ["M", 1e6],
+    ["K", 1e3],
+  ];
+  for (const [letter, unit] of units) {
+    if (abs < unit) continue;
+    for (const decimals of [0, 1, 2]) {
+      const factor = 10 ** decimals;
+      const rounded = Math.round((n / unit) * factor) / factor;
+      if (Math.abs(rounded * unit - n) < 0.5) {
+        const str =
+          decimals === 0
+            ? String(rounded)
+            : rounded.toFixed(decimals).replace(/\.?0+$/, "");
+        return `${str}${letter}`;
+      }
+    }
+    break;
+  }
+  return Math.round(n).toLocaleString("ru-RU");
 };
 
 const formatCellValue = (
