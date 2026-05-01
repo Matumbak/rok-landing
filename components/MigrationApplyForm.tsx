@@ -64,28 +64,39 @@ const NUMERIC_OCR_FIELDS = new Set([
   "gold",
   "maxValorPoints",
   "previousKvkDkp",
+  "prevKvkPower",
+  "prevKvkKillPoints",
+  "prevKvkT4Kills",
+  "prevKvkT5Kills",
+  "prevKvkDeaths",
 ]);
 
 /**
  * Heuristic mapping from DKP-scan column labels to form-state keys.
+ *
+ * IMPORTANT: a DKP scan reflects the LAST KvK only, NOT the lifetime
+ * account stats. We map T4/T5/deaths/etc. to the dedicated `prevKvk*`
+ * fields so we never overwrite the applicant's lifetime power /
+ * killPoints / t4Kills / etc. that came from their account profile.
+ *
  * The first regex that matches a column label wins for that key.
  * Labels in RoK scans are wildly inconsistent (RU/EN, abbreviated,
- * "T4 Kills" vs "Tier 4 kills" vs "Killed T4"), so we cast a wide
- * net but stay specific enough to avoid grabbing points columns
- * when we want counts.
+ * "T4 Kills" vs "Tier 4 kills" vs "Killed T4"); we cast a wide net
+ * but stay specific enough to avoid pulling points columns when we
+ * want counts.
  */
 const DKP_COLUMN_PATTERNS: Array<[RegExp, OcrFieldKey]> = [
-  [/(?:^|[\s_])power\b|^мощь$|^мощ/iu, "power"],
-  [/kill\s*points|^kp\b|очки\s*убийств/iu, "killPoints"],
+  [/(?:^|[\s_])power\b|^мощь$|^мощ/iu, "prevKvkPower"],
+  [/kill\s*points|^kp\b|очки\s*убийств/iu, "prevKvkKillPoints"],
   [
     /(?:^|[\s_])t\s*4\b|tier\s*4\b|т\s*4\b|тир\s*4\b/iu,
-    "t4Kills",
+    "prevKvkT4Kills",
   ],
   [
     /(?:^|[\s_])t\s*5\b|tier\s*5\b|т\s*5\b|тир\s*5\b/iu,
-    "t5Kills",
+    "prevKvkT5Kills",
   ],
-  [/dead(?:s|ed)?|death|^deads?$|смерт|потер/iu, "deaths"],
+  [/dead(?:s|ed)?|death|^deads?$|смерт|потер/iu, "prevKvkDeaths"],
   [/^dkp(\s*score)?$|kvk\s*(score|points|очк)|очки\s*kvk/iu, "previousKvkDkp"],
 ];
 
@@ -111,6 +122,11 @@ const OCR_FIELD_KEYS = [
   "maxValorPoints",
   "accountBornAt",
   "previousKvkDkp",
+  "prevKvkPower",
+  "prevKvkKillPoints",
+  "prevKvkT4Kills",
+  "prevKvkT5Kills",
+  "prevKvkDeaths",
 ] as const;
 type OcrFieldKey = (typeof OCR_FIELD_KEYS)[number];
 
@@ -181,6 +197,11 @@ interface FormState {
   speedupsHealing: string;
 
   previousKvkDkp: string;
+  prevKvkPower: string;
+  prevKvkKillPoints: string;
+  prevKvkT4Kills: string;
+  prevKvkT5Kills: string;
+  prevKvkDeaths: string;
 
   marches: string;
 
@@ -221,6 +242,11 @@ const EMPTY_STATE: FormState = {
   speedupsHealing: "",
 
   previousKvkDkp: "",
+  prevKvkPower: "",
+  prevKvkKillPoints: "",
+  prevKvkT4Kills: "",
+  prevKvkT5Kills: "",
+  prevKvkDeaths: "",
 
   marches: "",
 
@@ -647,6 +673,11 @@ export function MigrationApplyForm() {
           speedupsMinutes: null,
 
           previousKvkDkp: state.previousKvkDkp.trim() || null,
+          prevKvkPower: state.prevKvkPower.trim() || null,
+          prevKvkKillPoints: state.prevKvkKillPoints.trim() || null,
+          prevKvkT4Kills: state.prevKvkT4Kills.trim() || null,
+          prevKvkT5Kills: state.prevKvkT5Kills.trim() || null,
+          prevKvkDeaths: state.prevKvkDeaths.trim() || null,
 
           marches: state.marches.trim()
             ? Number.parseInt(state.marches.trim(), 10) || null
@@ -1001,7 +1032,7 @@ export function MigrationApplyForm() {
 
       <Section
         title="Previous KvK DKP (optional)"
-        subtitle="Drop your KvK scan spreadsheet — we look up your governor ID and pull DKP, T4/T5, deaths automatically. Or screenshot the score and type it below."
+        subtitle="Drop your KvK scan spreadsheet — we look up your governor ID and pull last-KvK DKP, T4/T5, deaths automatically (kept separate from your lifetime account stats above). Or screenshot the score and type it below."
       >
         <DkpScanLookup
           governorId={state.governorId}
@@ -1023,6 +1054,41 @@ export function MigrationApplyForm() {
             onChange={(v) => update("previousKvkDkp", v)}
             placeholder="142M"
             extracted={extracted.has("previousKvkDkp")}
+          />
+          <Field
+            label="Last KvK · T4 kills"
+            value={state.prevKvkT4Kills}
+            onChange={(v) => update("prevKvkT4Kills", v)}
+            placeholder="2.4M"
+            extracted={extracted.has("prevKvkT4Kills")}
+          />
+          <Field
+            label="Last KvK · T5 kills"
+            value={state.prevKvkT5Kills}
+            onChange={(v) => update("prevKvkT5Kills", v)}
+            placeholder="1.1M"
+            extracted={extracted.has("prevKvkT5Kills")}
+          />
+          <Field
+            label="Last KvK · Deaths"
+            value={state.prevKvkDeaths}
+            onChange={(v) => update("prevKvkDeaths", v)}
+            placeholder="450K"
+            extracted={extracted.has("prevKvkDeaths")}
+          />
+          <Field
+            label="Last KvK · Kill points"
+            value={state.prevKvkKillPoints}
+            onChange={(v) => update("prevKvkKillPoints", v)}
+            placeholder="38M"
+            extracted={extracted.has("prevKvkKillPoints")}
+          />
+          <Field
+            label="Last KvK · Power (snapshot)"
+            value={state.prevKvkPower}
+            onChange={(v) => update("prevKvkPower", v)}
+            placeholder="84M"
+            extracted={extracted.has("prevKvkPower")}
           />
         </Grid>
       </Section>

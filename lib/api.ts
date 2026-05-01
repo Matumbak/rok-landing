@@ -187,6 +187,15 @@ export type MigrationSubmitBody = {
   equipmentSummary?: Record<string, string> | null;
   previousKvkDkp?: string | null;
 
+  /** Last-KvK stats from the applicant's DKP-scan row. Distinct from
+   *  the account-wide power/killPoints/etc. — these reflect last KvK
+   *  only, so we never overwrite the lifetime account stats. */
+  prevKvkPower?: string | null;
+  prevKvkKillPoints?: string | null;
+  prevKvkT4Kills?: string | null;
+  prevKvkT5Kills?: string | null;
+  prevKvkDeaths?: string | null;
+
   activityHours?: string | null;
   timezone?: string | null;
   hasScrolls: boolean;
