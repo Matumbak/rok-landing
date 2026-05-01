@@ -126,9 +126,23 @@ export type MigrationScreenshot = {
   pathname: string;
   size?: number;
   contentType?: string;
-  category: "account" | "commander" | "resource" | "dkp" | "other";
+  category:
+    | "account"
+    | "commander"
+    | "resource"
+    | "dkp"
+    | "verification"
+    | "other";
   label?: string;
 };
+
+export type SpendingTier =
+  | "f2p"
+  | "low"
+  | "mid"
+  | "high"
+  | "whale"
+  | "kraken";
 
 export type MigrationSubmitBody = {
   governorId: string;
@@ -139,6 +153,8 @@ export type MigrationSubmitBody = {
   killPoints: string;
   vipLevel: string;
   discordHandle: string;
+  /** Required: applicant's self-declared spend bracket. */
+  spendingTier: SpendingTier;
 
   // Profile screen — Max valor (lifetime), the only KvK proxy we keep.
   maxValorPoints?: string | null;
@@ -161,6 +177,11 @@ export type MigrationSubmitBody = {
   speedupsHealing?: string | null;
   speedupsMinutes?: string | null;
   speedupsBreakdown?: Record<string, string> | null;
+
+  /** ISO calendar date "YYYY-MM-DD" — extracted from the Scout commander screen. */
+  accountBornAt?: string | null;
+  /** True iff the verification Scout screenshot was OCR-confirmed. */
+  scoutVerified?: boolean | null;
 
   marches?: number | null;
   equipmentSummary?: Record<string, string> | null;

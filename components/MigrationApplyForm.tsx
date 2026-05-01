@@ -17,6 +17,8 @@ import {
   AlertCircle,
   Image as ImageIcon,
   Sparkles,
+  ShieldAlert,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -24,9 +26,23 @@ import { compressImage } from "@/lib/compress";
 import { parseUploadedScreen, type ParsedRokScreen } from "@/lib/ocr/extract";
 import {
   MigrationScreenshot,
+  SpendingTier,
   submitMigrationApplication,
   uploadScreenshot,
 } from "@/lib/api";
+
+const SPENDING_TIER_OPTIONS: {
+  value: SpendingTier;
+  label: string;
+  hint: string;
+}[] = [
+  { value: "f2p", label: "F2P", hint: "Never paid" },
+  { value: "low", label: "Low", hint: "<$100 lifetime" },
+  { value: "mid", label: "Mid", hint: "$100–500" },
+  { value: "high", label: "High", hint: "$500–2 000" },
+  { value: "whale", label: "Whale", hint: "$2 000–10 000" },
+  { value: "kraken", label: "Kraken", hint: "$10 000+" },
+];
 
 const DRAFT_KEY = "huns-migration-apply-draft-v1";
 const MAX_FILES = 30;
@@ -51,6 +67,7 @@ const OCR_FIELD_KEYS = [
   "speedupsHealing",
   "vipLevel",
   "maxValorPoints",
+  "accountBornAt",
 ] as const;
 type OcrFieldKey = (typeof OCR_FIELD_KEYS)[number];
 
@@ -66,6 +83,13 @@ interface Pending {
    * preview can show a small indicator while Tesseract is busy.
    */
   ocrStatus: "idle" | "running" | "done" | "error";
+  /**
+   * Set only on verification-category uploads. `match` means OCR
+   * confirmed the starter Scout commander; `mismatch` means it's a
+   * different commander or the screen failed verification — either
+   * way, the user must re-upload to prove account age.
+   */
+  scoutResult?: "match" | "mismatch" | null;
   progress: number;
   error?: string;
   preview: string;
@@ -84,6 +108,16 @@ interface FormState {
   killPoints: string;
   vipLevel: string;
   discordHandle: string;
+  /** Required, but the form doesn't constrain the input type at the
+   *  state level — `""` means "user hasn't picked yet". Submit
+   *  guards it. */
+  spendingTier: SpendingTier | "";
+
+  /**
+   * ISO calendar date "YYYY-MM-DD" — derived from the Scout commander
+   * screen. Empty until OCR fills it (or the user types it manually).
+   */
+  accountBornAt: string;
 
   // KvK record (from profile screen). OCR-fillable, optional.
   maxValorPoints: string;
@@ -122,6 +156,9 @@ const EMPTY_STATE: FormState = {
   killPoints: "",
   vipLevel: "",
   discordHandle: "",
+  spendingTier: "",
+
+  accountBornAt: "",
 
   maxValorPoints: "",
 
@@ -242,6 +279,12 @@ export function MigrationApplyForm() {
    * Merge OCR-extracted stats into the form. Only fills fields that are
    * either empty or were previously filled by OCR — never overrides a
    * value the user typed manually.
+   *
+   * Scout-specific gate: `accountBornAt` is filled ONLY when the OCR
+   * confirmed the starter Scout commander (`isScoutCommander === true`).
+   * Any other commander screen is rejected — we don't trust the date
+   * from a Joan / Sun Tzu / etc. screenshot since those can be hired
+   * months later.
    */
   const applyOcr = useCallback(
     (stats: ParsedRokScreen) => {
@@ -250,8 +293,13 @@ export function MigrationApplyForm() {
         const justFilled = new Set<OcrFieldKey>();
         const skipped: Record<string, string> = {};
         for (const key of OCR_FIELD_KEYS) {
+          if (key === "accountBornAt" && stats.isScoutCommander !== true) {
+            // Either not a commander screen, or wrong commander —
+            // don't trust any date that might have been parsed.
+            continue;
+          }
           const val = stats[key as keyof ParsedRokScreen];
-          if (!val) continue;
+          if (!val || typeof val !== "string") continue;
           const current = s[key];
           if (current && !extracted.has(key)) {
             skipped[key] = `user-typed "${current}", parsed "${val}"`;
@@ -274,6 +322,9 @@ export function MigrationApplyForm() {
         }
         if (Object.keys(skipped).length > 0) {
           console.log("[OCR] skipped (user-typed wins):", skipped);
+        }
+        if (stats.isScoutCommander != null) {
+          console.log("[OCR] scout verification:", stats.isScoutCommander);
         }
         console.groupEnd();
         /* eslint-enable no-console */
@@ -321,11 +372,14 @@ export function MigrationApplyForm() {
             );
 
             // Skip OCR for the commanders category — those screens are
-            // pure imagery (officers eyeball them).
+            // pure imagery (officers eyeball them). Verification screens
+            // DO go through OCR — that's the whole point: confirm Scout
+            // and pull the recruit date.
             const shouldOcr =
               category === "account" ||
               category === "resource" ||
-              category === "dkp";
+              category === "dkp" ||
+              category === "verification";
 
             const out = await uploadScreenshot({
               blob: compressed.blob,
@@ -364,9 +418,21 @@ export function MigrationApplyForm() {
                     (v) => v != null,
                   ).length;
                   if (filled > 0) applyOcr(stats);
+                  // For verification uploads, encode the Scout-match
+                  // outcome on the file so the gallery can flag bad
+                  // commanders inline. Other categories simply get
+                  // scoutResult = null.
+                  const scoutResult: "match" | "mismatch" | null =
+                    category === "verification"
+                      ? stats.isScoutCommander === true
+                        ? "match"
+                        : "mismatch"
+                      : null;
                   setFiles((prev) =>
                     prev.map((p) =>
-                      p.id === id ? { ...p, ocrStatus: "done" } : p,
+                      p.id === id
+                        ? { ...p, ocrStatus: "done", scoutResult }
+                        : p,
                     ),
                   );
                 })
@@ -420,6 +486,10 @@ export function MigrationApplyForm() {
         );
         return;
       }
+      if (!state.spendingTier) {
+        setSubmitError("Pick a spending tier so we can calibrate your file.");
+        return;
+      }
       const stillUploading = files.some((f) => f.status === "uploading");
       if (stillUploading) {
         setSubmitError("Wait for all uploads to finish before submitting.");
@@ -428,6 +498,9 @@ export function MigrationApplyForm() {
 
       setSubmitting(true);
       try {
+        const scoutVerified = files.some(
+          (f) => f.category === "verification" && f.scoutResult === "match",
+        );
         const result = await submitMigrationApplication({
           governorId: state.governorId.trim(),
           nickname: state.nickname.trim(),
@@ -437,6 +510,10 @@ export function MigrationApplyForm() {
           killPoints: state.killPoints.trim(),
           vipLevel: state.vipLevel.trim(),
           discordHandle: state.discordHandle.trim(),
+          spendingTier: state.spendingTier as SpendingTier,
+
+          accountBornAt: state.accountBornAt.trim() || null,
+          scoutVerified,
 
           maxValorPoints: state.maxValorPoints.trim() || null,
 
@@ -570,6 +647,50 @@ export function MigrationApplyForm() {
             onChange={(v) => update("vipLevel", v)}
             placeholder="14"
             extracted={extracted.has("vipLevel")}
+          />
+        </Grid>
+
+        <p className="text-[11px] uppercase tracking-wider text-muted mt-6">
+          Spending bracket — required, used to calibrate the review.
+        </p>
+        <SpendingTierPicker
+          value={state.spendingTier}
+          onChange={(v) => update("spendingTier", v)}
+        />
+      </Section>
+
+      <Section
+        title="Account age proof"
+        subtitle={
+          <>
+            Open your <strong>Scout / Skirmisher</strong> commander
+            profile (the 3-star starter archer everyone gets in the first
+            two minutes — green «Advanced» rarity) and screenshot it. We
+            read its «Recruit Date» to confirm how old your account is —
+            any other commander is rejected.
+          </>
+        }
+      >
+        <DropZone
+          category="verification"
+          onFiles={(fs) => addFiles(fs, "verification")}
+          remaining={MAX_FILES - files.length}
+        />
+        <Gallery
+          files={files.filter((f) => f.category === "verification")}
+          onRemove={removeFile}
+        />
+        <ScoutVerificationStatus
+          files={files.filter((f) => f.category === "verification")}
+          accountBornAt={state.accountBornAt}
+        />
+        <Grid>
+          <Field
+            label="Account created (YYYY-MM-DD)"
+            value={state.accountBornAt}
+            onChange={(v) => update("accountBornAt", v)}
+            placeholder="2026-02-07"
+            extracted={extracted.has("accountBornAt")}
           />
         </Grid>
       </Section>
@@ -861,9 +982,45 @@ export function MigrationApplyForm() {
 
 /* ---------- subcomponents ---------- */
 
+function SpendingTierPicker(props: {
+  value: SpendingTier | "";
+  onChange: (v: SpendingTier) => void;
+}) {
+  return (
+    <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+      {SPENDING_TIER_OPTIONS.map((opt) => {
+        const active = props.value === opt.value;
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => props.onChange(opt.value)}
+            className={cn(
+              "border px-3 py-2.5 text-center transition group",
+              active
+                ? "border-accent bg-accent/15 text-accent-bright"
+                : "border-border-bronze/70 bg-background-deep/40 text-foreground hover:border-accent/60",
+            )}
+          >
+            <div
+              className={cn(
+                "text-sm font-medium uppercase tracking-wider",
+                active ? "text-accent-bright" : "text-foreground",
+              )}
+            >
+              {opt.label}
+            </div>
+            <div className="mt-0.5 text-[10px] text-muted">{opt.hint}</div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function Section(props: {
   title: string;
-  subtitle?: string;
+  subtitle?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -879,6 +1036,63 @@ function Section(props: {
       {props.children}
     </section>
   );
+}
+
+/**
+ * Inline banner under the verification dropzone. Three modes:
+ *   - empty                 → upload prompt is enough, render nothing
+ *   - has match             → green "verified, born YYYY-MM-DD"
+ *   - has only mismatches   → amber warning ("not the Scout — re-upload")
+ *   - OCR still running     → soft "checking..." state
+ */
+function ScoutVerificationStatus(props: {
+  files: Pending[];
+  accountBornAt: string;
+}) {
+  const ocrRunning = props.files.some((f) => f.ocrStatus === "running");
+  const matched = props.files.find((f) => f.scoutResult === "match");
+  const hasMismatch = props.files.some((f) => f.scoutResult === "mismatch");
+
+  if (matched) {
+    return (
+      <div className="flex items-start gap-2 mt-4 border border-emerald-500/40 bg-emerald-500/5 p-3 text-sm text-emerald-300">
+        <ShieldCheck className="h-5 w-5 shrink-0 mt-0.5" />
+        <div>
+          <div className="font-medium">Scout commander confirmed.</div>
+          {props.accountBornAt && (
+            <div className="text-xs text-emerald-200/80 mt-0.5">
+              Account created on{" "}
+              <span className="font-mono">{props.accountBornAt}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+  if (hasMismatch) {
+    return (
+      <div className="flex items-start gap-2 mt-4 border border-amber-500/40 bg-amber-500/5 p-3 text-sm text-amber-200">
+        <ShieldAlert className="h-5 w-5 shrink-0 mt-0.5" />
+        <div>
+          <div className="font-medium">That&apos;s not the Scout.</div>
+          <div className="text-xs text-amber-100/80 mt-0.5">
+            Only the 3-star Advanced Skirmisher (the starter archer) gives
+            us a reliable account-birth date. Open her profile and try
+            again.
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (ocrRunning) {
+    return (
+      <div className="flex items-center gap-2 mt-4 text-xs text-muted">
+        <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
+        Verifying commander…
+      </div>
+    );
+  }
+  return null;
 }
 
 function Grid({ children }: { children: React.ReactNode }) {
@@ -1023,6 +1237,24 @@ function Gallery(props: {
             >
               <Sparkles className="h-2.5 w-2.5 animate-pulse" />
               OCR
+            </div>
+          )}
+          {f.scoutResult === "match" && (
+            <div
+              className="absolute bottom-1 left-1 inline-flex items-center gap-1 px-1.5 py-0.5 bg-emerald-600/85 text-[9px] uppercase tracking-wider text-white"
+              title="Verified Scout commander"
+            >
+              <ShieldCheck className="h-2.5 w-2.5" />
+              Scout
+            </div>
+          )}
+          {f.scoutResult === "mismatch" && (
+            <div
+              className="absolute bottom-1 left-1 inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-600/85 text-[9px] uppercase tracking-wider text-white"
+              title="Not the Scout commander — re-upload"
+            >
+              <ShieldAlert className="h-2.5 w-2.5" />
+              Wrong
             </div>
           )}
           {f.status === "error" && (

@@ -38,6 +38,10 @@ export interface ParsedRokScreen {
   speedupsTraining: string | null;
   speedupsHealing: string | null;
   speedupsUniversal: string | null;
+  /** True iff the screen is the starter Scout commander profile. */
+  isScoutCommander: boolean | null;
+  /** ISO calendar date "YYYY-MM-DD" — Scout's recruit date == account birthday. */
+  accountBornAt: string | null;
 }
 
 /**
