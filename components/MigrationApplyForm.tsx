@@ -21,7 +21,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, formatOcrNumeric } from "@/lib/utils";
 import { compressImage } from "@/lib/compress";
 import { parseUploadedScreen, type ParsedRokScreen } from "@/lib/ocr/extract";
 import {
@@ -45,6 +45,22 @@ const SPENDING_TIER_OPTIONS: {
 
 const DRAFT_KEY = "huns-migration-apply-draft-v1";
 const MAX_FILES = 30;
+
+/** Subset of OCR-fillable fields whose value is a raw integer that we
+ *  want to display in human form ("77 676 008" / "2B") rather than
+ *  "77676008". applyOcr formats these before storing. */
+const NUMERIC_OCR_FIELDS = new Set([
+  "power",
+  "killPoints",
+  "t4Kills",
+  "t5Kills",
+  "deaths",
+  "food",
+  "wood",
+  "stone",
+  "gold",
+  "maxValorPoints",
+]);
 
 /** FormState keys OCR can fill. */
 const OCR_FIELD_KEYS = [
@@ -297,8 +313,11 @@ export function MigrationApplyForm() {
             // don't trust any date that might have been parsed.
             continue;
           }
-          const val = stats[key as keyof ParsedRokScreen];
-          if (!val || typeof val !== "string") continue;
+          const rawVal = stats[key as keyof ParsedRokScreen];
+          if (!rawVal || typeof rawVal !== "string") continue;
+          const val = NUMERIC_OCR_FIELDS.has(key)
+            ? formatOcrNumeric(rawVal)
+            : rawVal;
           const current = s[key];
           if (current && !extracted.has(key)) {
             skipped[key] = `user-typed "${current}", parsed "${val}"`;
