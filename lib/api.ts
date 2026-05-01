@@ -198,6 +198,60 @@ export type MigrationSubmitBody = {
   screenshots: MigrationScreenshot[];
 };
 
+export type DkpLookupColumn = {
+  key: string;
+  label: string;
+  type: "number" | "percent" | "string";
+  sortable: boolean;
+  order: number;
+  native: boolean;
+};
+
+export type DkpLookupRow = {
+  rank: number;
+  governorId: string;
+  nickname: string;
+  alliance: string;
+  /** Column-label → cell value (numbers stored as integer strings). */
+  data: Record<string, string | number | null>;
+};
+
+export type DkpLookupResult =
+  | {
+      ok: true;
+      row: DkpLookupRow;
+      columns: DkpLookupColumn[];
+    }
+  | {
+      ok: false;
+      error: "not_in_scan";
+      scanRows: number;
+    };
+
+/**
+ * One-shot DKP-table lookup for the migration form. Sends the xlsx +
+ * the applicant's governorId, gets back either the matching row +
+ * column metadata or a not_in_scan signal so we can show the right
+ * hint. The file is parsed in memory server-side and discarded.
+ */
+export async function lookupDkpRow(args: {
+  file: File;
+  governorId: string;
+}): Promise<DkpLookupResult> {
+  const fd = new FormData();
+  fd.append("file", args.file);
+  fd.append("governorId", args.governorId);
+  const res = await fetch(`${API_URL}/api/dkp/lookup`, {
+    method: "POST",
+    body: fd,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error ?? `dkp_lookup_failed_${res.status}`);
+  }
+  return (await res.json()) as DkpLookupResult;
+}
+
 export async function uploadScreenshot(args: {
   blob: Blob;
   contentType: string;

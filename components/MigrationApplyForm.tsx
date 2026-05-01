@@ -25,6 +25,9 @@ import { cn, formatOcrNumeric } from "@/lib/utils";
 import { compressImage } from "@/lib/compress";
 import { parseUploadedScreen, type ParsedRokScreen } from "@/lib/ocr/extract";
 import {
+  DkpLookupColumn,
+  DkpLookupRow,
+  lookupDkpRow,
   MigrationScreenshot,
   SpendingTier,
   submitMigrationApplication,
@@ -60,7 +63,31 @@ const NUMERIC_OCR_FIELDS = new Set([
   "stone",
   "gold",
   "maxValorPoints",
+  "previousKvkDkp",
 ]);
+
+/**
+ * Heuristic mapping from DKP-scan column labels to form-state keys.
+ * The first regex that matches a column label wins for that key.
+ * Labels in RoK scans are wildly inconsistent (RU/EN, abbreviated,
+ * "T4 Kills" vs "Tier 4 kills" vs "Killed T4"), so we cast a wide
+ * net but stay specific enough to avoid grabbing points columns
+ * when we want counts.
+ */
+const DKP_COLUMN_PATTERNS: Array<[RegExp, OcrFieldKey]> = [
+  [/(?:^|[\s_])power\b|^мощь$|^мощ/iu, "power"],
+  [/kill\s*points|^kp\b|очки\s*убийств/iu, "killPoints"],
+  [
+    /(?:^|[\s_])t\s*4\b|tier\s*4\b|т\s*4\b|тир\s*4\b/iu,
+    "t4Kills",
+  ],
+  [
+    /(?:^|[\s_])t\s*5\b|tier\s*5\b|т\s*5\b|тир\s*5\b/iu,
+    "t5Kills",
+  ],
+  [/dead(?:s|ed)?|death|^deads?$|смерт|потер/iu, "deaths"],
+  [/^dkp(\s*score)?$|kvk\s*(score|points|очк)|очки\s*kvk/iu, "previousKvkDkp"],
+];
 
 /** FormState keys OCR can fill. */
 const OCR_FIELD_KEYS = [
@@ -83,6 +110,7 @@ const OCR_FIELD_KEYS = [
   "vipLevel",
   "maxValorPoints",
   "accountBornAt",
+  "previousKvkDkp",
 ] as const;
 type OcrFieldKey = (typeof OCR_FIELD_KEYS)[number];
 
@@ -343,6 +371,74 @@ export function MigrationApplyForm() {
         }
         if (stats.isScoutCommander != null) {
           console.log("[OCR] scout verification:", stats.isScoutCommander);
+        }
+        console.groupEnd();
+        /* eslint-enable no-console */
+        if (justFilled.size > 0) {
+          setExtracted((prev) => {
+            const merged = new Set(prev);
+            for (const k of justFilled) merged.add(k);
+            return merged;
+          });
+        }
+        return next;
+      });
+    },
+    [extracted],
+  );
+
+  /**
+   * Fill form fields from a DKP-scan row. Applies the same "don't
+   * overwrite user-typed values" gate as applyOcr — if the user
+   * already typed something, we keep it.
+   */
+  const applyDkpRow = useCallback(
+    (row: DkpLookupRow, columns: DkpLookupColumn[]) => {
+      // Resolve each canonical key by finding the first column whose
+      // label matches that key's regex. We resolve all keys up-front so
+      // the merge below can run inside one setState batch.
+      const fills: Partial<Record<OcrFieldKey, string>> = {};
+      for (const [re, key] of DKP_COLUMN_PATTERNS) {
+        if (key in fills) continue;
+        const col = columns.find((c) => re.test(c.label));
+        if (!col) continue;
+        const raw = row.data[col.label];
+        if (raw == null || raw === "") continue;
+        const asString = String(raw);
+        fills[key] = NUMERIC_OCR_FIELDS.has(key)
+          ? formatOcrNumeric(asString)
+          : asString;
+      }
+
+      setState((s) => {
+        const next = { ...s };
+        const justFilled = new Set<OcrFieldKey>();
+        const skipped: Record<string, string> = {};
+        for (const [key, val] of Object.entries(fills) as Array<
+          [OcrFieldKey, string]
+        >) {
+          const current = s[key];
+          if (current && !extracted.has(key)) {
+            skipped[key] = `user-typed "${current}", scan "${val}"`;
+            continue;
+          }
+          next[key] = val;
+          justFilled.add(key);
+        }
+        /* eslint-disable no-console */
+        console.groupCollapsed(
+          `[DKP] applyDkpRow → filled ${justFilled.size}, skipped ${Object.keys(skipped).length}`,
+        );
+        if (justFilled.size > 0) {
+          console.log(
+            "[DKP] filled:",
+            Object.fromEntries(
+              [...justFilled].map((k) => [k, fills[k]]),
+            ),
+          );
+        }
+        if (Object.keys(skipped).length > 0) {
+          console.log("[DKP] skipped (user-typed wins):", skipped);
         }
         console.groupEnd();
         /* eslint-enable no-console */
@@ -905,8 +1001,12 @@ export function MigrationApplyForm() {
 
       <Section
         title="Previous KvK DKP (optional)"
-        subtitle="Last KvK personal score screen — helps us gauge your KvK rhythm."
+        subtitle="Drop your KvK scan spreadsheet — we look up your governor ID and pull DKP, T4/T5, deaths automatically. Or screenshot the score and type it below."
       >
+        <DkpScanLookup
+          governorId={state.governorId}
+          onResult={applyDkpRow}
+        />
         <DropZone
           category="dkp"
           onFiles={(fs) => addFiles(fs, "dkp")}
@@ -922,6 +1022,7 @@ export function MigrationApplyForm() {
             value={state.previousKvkDkp}
             onChange={(v) => update("previousKvkDkp", v)}
             placeholder="142M"
+            extracted={extracted.has("previousKvkDkp")}
           />
         </Grid>
       </Section>
@@ -1003,6 +1104,134 @@ export function MigrationApplyForm() {
 }
 
 /* ---------- subcomponents ---------- */
+
+/**
+ * One-shot DKP-scan upload. Picks an .xlsx, sends it to the lookup
+ * endpoint with the applicant's governor ID, hands the matched row
+ * back to the form via `onResult`, and surfaces the outcome inline
+ * (matched / not in scan / error).
+ *
+ * Disabled until a governor ID is filled — without it the lookup is
+ * meaningless. Status persists so the applicant sees what happened
+ * without scrolling back through console logs.
+ */
+function DkpScanLookup(props: {
+  governorId: string;
+  onResult: (row: DkpLookupRow, columns: DkpLookupColumn[]) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  type Status =
+    | { state: "idle" }
+    | { state: "loading"; filename: string }
+    | { state: "matched"; row: DkpLookupRow; filename: string }
+    | { state: "not_found"; scanRows: number; filename: string }
+    | { state: "error"; message: string };
+  const [status, setStatus] = useState<Status>({ state: "idle" });
+
+  const onPick = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    const govId = props.governorId.trim();
+    if (!govId) {
+      setStatus({
+        state: "error",
+        message: "Fill the Governor ID above first — we look you up by it.",
+      });
+      return;
+    }
+    setStatus({ state: "loading", filename: file.name });
+    try {
+      const res = await lookupDkpRow({ file, governorId: govId });
+      if (res.ok) {
+        props.onResult(res.row, res.columns);
+        setStatus({ state: "matched", row: res.row, filename: file.name });
+      } else {
+        setStatus({
+          state: "not_found",
+          scanRows: res.scanRows,
+          filename: file.name,
+        });
+      }
+    } catch (err) {
+      setStatus({
+        state: "error",
+        message: (err as Error).message ?? "lookup_failed",
+      });
+    }
+  };
+
+  const govIdReady = props.governorId.trim().length > 0;
+
+  return (
+    <div className="border border-dashed border-border-bronze/70 bg-background-deep/40 p-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => inputRef.current?.click()}
+          disabled={!govIdReady || status.state === "loading"}
+        >
+          {status.state === "loading" ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Upload className="h-4 w-4" />
+          )}
+          Upload KvK scan (xlsx)
+        </Button>
+        <p className="text-xs text-muted">
+          {govIdReady
+            ? "We find your row by Governor ID and pull DKP, T4/T5, deaths, etc."
+            : "Fill the Governor ID above first."}
+        </p>
+        <input
+          ref={inputRef}
+          type="file"
+          accept=".xlsx,.xlsm,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          className="hidden"
+          onChange={onPick}
+        />
+      </div>
+
+      {status.state === "matched" && (
+        <div className="mt-3 flex items-start gap-2 border border-emerald-500/40 bg-emerald-500/5 p-3 text-sm text-emerald-300">
+          <CheckCircle2 className="h-5 w-5 shrink-0 mt-0.5" />
+          <div className="min-w-0">
+            <div className="font-medium">
+              Found rank #{status.row.rank} —{" "}
+              <span className="font-mono">{status.row.nickname}</span>
+              {status.row.alliance ? ` [${status.row.alliance}]` : ""}
+            </div>
+            <div className="text-xs text-emerald-200/80 mt-0.5 truncate">
+              From <span className="font-mono">{status.filename}</span>. Fields
+              below auto-filled where empty.
+            </div>
+          </div>
+        </div>
+      )}
+      {status.state === "not_found" && (
+        <div className="mt-3 flex items-start gap-2 border border-amber-500/40 bg-amber-500/5 p-3 text-sm text-amber-200">
+          <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+          <div>
+            <div className="font-medium">
+              Not in this scan ({status.scanRows} rows checked).
+            </div>
+            <div className="text-xs text-amber-100/80 mt-0.5">
+              Double-check the Governor ID, or upload a different scan.
+            </div>
+          </div>
+        </div>
+      )}
+      {status.state === "error" && (
+        <div className="mt-3 flex items-start gap-2 border border-red-500/40 bg-red-500/5 p-3 text-sm text-red-300">
+          <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+          <div>{status.message}</div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function SpendingTierPicker(props: {
   value: SpendingTier | "";
