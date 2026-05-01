@@ -34,14 +34,13 @@ import {
 const SPENDING_TIER_OPTIONS: {
   value: SpendingTier;
   label: string;
-  hint: string;
 }[] = [
-  { value: "f2p", label: "F2P", hint: "Never paid" },
-  { value: "low", label: "Low", hint: "<$100 lifetime" },
-  { value: "mid", label: "Mid", hint: "$100–500" },
-  { value: "high", label: "High", hint: "$500–2 000" },
-  { value: "whale", label: "Whale", hint: "$2 000–10 000" },
-  { value: "kraken", label: "Kraken", hint: "$10 000+" },
+  { value: "f2p", label: "F2P" },
+  { value: "low", label: "Low" },
+  { value: "mid", label: "Mid" },
+  { value: "high", label: "High" },
+  { value: "whale", label: "Whale" },
+  { value: "kraken", label: "Kraken" },
 ];
 
 const DRAFT_KEY = "huns-migration-apply-draft-v1";
@@ -604,7 +603,23 @@ export function MigrationApplyForm() {
         </p>
       </header>
 
-      <Section title="Identity" subtitle="Who's knocking on the gate.">
+      <Section
+        title="Profile"
+        subtitle="Drop your governor profile, kill data popup, troop details, individual stats and lost troops screens first — fields below auto-fill via OCR. Edit anything that came out wrong."
+      >
+        <DropZone
+          category="account"
+          onFiles={(fs) => addFiles(fs, "account")}
+          remaining={MAX_FILES - files.length}
+        />
+        <Gallery
+          files={files.filter((f) => f.category === "account")}
+          onRemove={removeFile}
+        />
+
+        <p className="text-[11px] uppercase tracking-wider text-muted mt-6">
+          Identity
+        </p>
         <Grid>
           <Field
             label="Governor ID"
@@ -612,6 +627,7 @@ export function MigrationApplyForm() {
             value={state.governorId}
             onChange={(v) => update("governorId", v)}
             placeholder="124000000"
+            extracted={extracted.has("governorId")}
           />
           <Field
             label="In-game nickname"
@@ -619,6 +635,7 @@ export function MigrationApplyForm() {
             value={state.nickname}
             onChange={(v) => update("nickname", v)}
             placeholder="WarDaddyChadski"
+            extracted={extracted.has("nickname")}
           />
           <Field
             label="Current kingdom"
@@ -649,65 +666,6 @@ export function MigrationApplyForm() {
             extracted={extracted.has("vipLevel")}
           />
         </Grid>
-
-        <p className="text-[11px] uppercase tracking-wider text-muted mt-6">
-          Spending bracket — required, used to calibrate the review.
-        </p>
-        <SpendingTierPicker
-          value={state.spendingTier}
-          onChange={(v) => update("spendingTier", v)}
-        />
-      </Section>
-
-      <Section
-        title="Account age proof"
-        subtitle={
-          <>
-            Open your <strong>Scout / Skirmisher</strong> commander
-            profile (the 3-star starter archer everyone gets in the first
-            two minutes — green «Advanced» rarity) and screenshot it. We
-            read its «Recruit Date» to confirm how old your account is —
-            any other commander is rejected.
-          </>
-        }
-      >
-        <DropZone
-          category="verification"
-          onFiles={(fs) => addFiles(fs, "verification")}
-          remaining={MAX_FILES - files.length}
-        />
-        <Gallery
-          files={files.filter((f) => f.category === "verification")}
-          onRemove={removeFile}
-        />
-        <ScoutVerificationStatus
-          files={files.filter((f) => f.category === "verification")}
-          accountBornAt={state.accountBornAt}
-        />
-        <Grid>
-          <Field
-            label="Account created (YYYY-MM-DD)"
-            value={state.accountBornAt}
-            onChange={(v) => update("accountBornAt", v)}
-            placeholder="2026-02-07"
-            extracted={extracted.has("accountBornAt")}
-          />
-        </Grid>
-      </Section>
-
-      <Section
-        title="Account & profile"
-        subtitle="Drop your governor profile, kill data popup, troop details, individual stats and lost troops screens — fields below auto-fill via OCR. Edit anything that came out wrong."
-      >
-        <DropZone
-          category="account"
-          onFiles={(fs) => addFiles(fs, "account")}
-          remaining={MAX_FILES - files.length}
-        />
-        <Gallery
-          files={files.filter((f) => f.category === "account")}
-          onRemove={removeFile}
-        />
 
         <p className="text-[11px] uppercase tracking-wider text-muted mt-6">
           Core
@@ -762,6 +720,51 @@ export function MigrationApplyForm() {
             onChange={(v) => update("maxValorPoints", v)}
             placeholder="7.2M"
             extracted={extracted.has("maxValorPoints")}
+          />
+        </Grid>
+      </Section>
+
+      <Section
+        title="Spending tier"
+        subtitle="Required. Pick the bracket that feels honest — officers don't need exact numbers."
+      >
+        <SpendingTierPicker
+          value={state.spendingTier}
+          onChange={(v) => update("spendingTier", v)}
+        />
+      </Section>
+
+      <Section
+        title="Account age proof"
+        subtitle={
+          <>
+            Open your <strong>Scout / Skirmisher</strong> commander
+            profile and screenshot it. We read her «Recruit Date» to
+            confirm how old your account is — any other commander is
+            rejected.
+          </>
+        }
+      >
+        <DropZone
+          category="verification"
+          onFiles={(fs) => addFiles(fs, "verification")}
+          remaining={MAX_FILES - files.length}
+        />
+        <Gallery
+          files={files.filter((f) => f.category === "verification")}
+          onRemove={removeFile}
+        />
+        <ScoutVerificationStatus
+          files={files.filter((f) => f.category === "verification")}
+          accountBornAt={state.accountBornAt}
+        />
+        <Grid>
+          <Field
+            label="Account created (YYYY-MM-DD)"
+            value={state.accountBornAt}
+            onChange={(v) => update("accountBornAt", v)}
+            placeholder="2026-02-07"
+            extracted={extracted.has("accountBornAt")}
           />
         </Grid>
       </Section>
@@ -996,21 +999,20 @@ function SpendingTierPicker(props: {
             type="button"
             onClick={() => props.onChange(opt.value)}
             className={cn(
-              "border px-3 py-2.5 text-center transition group",
+              "border px-3 py-3 text-center transition",
               active
                 ? "border-accent bg-accent/15 text-accent-bright"
                 : "border-border-bronze/70 bg-background-deep/40 text-foreground hover:border-accent/60",
             )}
           >
-            <div
+            <span
               className={cn(
                 "text-sm font-medium uppercase tracking-wider",
                 active ? "text-accent-bright" : "text-foreground",
               )}
             >
               {opt.label}
-            </div>
-            <div className="mt-0.5 text-[10px] text-muted">{opt.hint}</div>
+            </span>
           </button>
         );
       })}
@@ -1076,9 +1078,8 @@ function ScoutVerificationStatus(props: {
         <div>
           <div className="font-medium">That&apos;s not the Scout.</div>
           <div className="text-xs text-amber-100/80 mt-0.5">
-            Only the 3-star Advanced Skirmisher (the starter archer) gives
-            us a reliable account-birth date. Open her profile and try
-            again.
+            Only the starter Skirmisher gives us a reliable
+            account-birth date. Open her profile and try again.
           </div>
         </div>
       </div>
