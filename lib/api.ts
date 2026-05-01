@@ -144,6 +144,8 @@ export type SpendingTier =
   | "whale"
   | "kraken";
 
+export type ScoringProfile = "lost-kingdom" | "season-of-conquest";
+
 export type MigrationSubmitBody = {
   governorId: string;
   nickname: string;

@@ -57,6 +57,9 @@ const MAX_FILES = 30;
 const NUMERIC_OCR_FIELDS = new Set([
   "power",
   "killPoints",
+  "t1Kills",
+  "t2Kills",
+  "t3Kills",
   "t4Kills",
   "t5Kills",
   "deaths",
@@ -128,6 +131,9 @@ const OCR_FIELD_KEYS = [
   "nickname",
   "power",
   "killPoints",
+  "t1Kills",
+  "t2Kills",
+  "t3Kills",
   "t4Kills",
   "t5Kills",
   "deaths",
@@ -202,6 +208,12 @@ interface FormState {
   // KvK record (from profile screen). OCR-fillable, optional.
   maxValorPoints: string;
 
+  /// T1–T3 are extracted by OCR for the T1-trade detection in admin
+  /// scoring. Not exposed as visible inputs — values stay in state and
+  /// flow through submit invisibly.
+  t1Kills: string;
+  t2Kills: string;
+  t3Kills: string;
   t4Kills: string;
   t5Kills: string;
   deaths: string;
@@ -246,6 +258,9 @@ const EMPTY_STATE: FormState = {
 
   maxValorPoints: "",
 
+  t1Kills: "",
+  t2Kills: "",
+  t3Kills: "",
   t4Kills: "",
   t5Kills: "",
   deaths: "",
@@ -724,6 +739,9 @@ export function MigrationApplyForm() {
 
           maxValorPoints: state.maxValorPoints.trim() || null,
 
+          t1Kills: state.t1Kills.trim() || null,
+          t2Kills: state.t2Kills.trim() || null,
+          t3Kills: state.t3Kills.trim() || null,
           t4Kills: state.t4Kills.trim() || null,
           t5Kills: state.t5Kills.trim() || null,
           deaths: state.deaths.trim() || null,
