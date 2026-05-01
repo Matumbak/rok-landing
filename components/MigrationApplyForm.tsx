@@ -105,14 +105,17 @@ type DriftWatchedKey = (typeof DRIFT_WATCHED_KEYS)[number];
  * fields so we never overwrite the applicant's lifetime power /
  * killPoints / t4Kills / etc. that came from their account profile.
  *
- * The first regex that matches a column label wins for that key.
- * Labels in RoK scans are wildly inconsistent (RU/EN, abbreviated,
- * "T4 Kills" vs "Tier 4 kills" vs "Killed T4"); we cast a wide net
- * but stay specific enough to avoid pulling points columns when we
- * want counts.
+ * Order matters — tier-specific patterns (T4/T5/deaths/DKP) run FIRST
+ * so a column like "T4 Kill Points" gets claimed by the T4 pattern
+ * before the generic KP pattern can grab it. `applyDkpRow` tracks
+ * claimed columns to avoid double-mapping.
+ *
+ * KP regex casts a wide net: "Kill Points" / "killpoints" (no space,
+ * common in tracker exports) / "KP" / "K.P." / "Очки убийств".
  */
 const DKP_COLUMN_PATTERNS: Array<[RegExp, OcrFieldKey]> = [
-  [/kill\s*points|^kp\b|очки\s*убийств/iu, "prevKvkKillPoints"],
+  // Tier-specific FIRST so they claim before generic KP can grab
+  // labels like "T4 Kill Points".
   [
     /(?:^|[\s_])t\s*4\b|tier\s*4\b|т\s*4\b|тир\s*4\b/iu,
     "prevKvkT4Kills",
@@ -123,6 +126,12 @@ const DKP_COLUMN_PATTERNS: Array<[RegExp, OcrFieldKey]> = [
   ],
   [/dead(?:s|ed)?|death|^deads?$|смерт|потер/iu, "prevKvkDeaths"],
   [/^dkp(\s*score)?$|kvk\s*(score|points|очк)|очки\s*kvk/iu, "previousKvkDkp"],
+  // Aggregate KP last — tier-specific patterns above already claimed
+  // any "T4 Kill Points" / "T5 KP" style columns.
+  [
+    /kill\s*points?|killpoints?|^kp$|^k\.?p\.?$|очки\s*убийств/iu,
+    "prevKvkKillPoints",
+  ],
 ];
 
 /** FormState keys OCR can fill. */
@@ -503,13 +512,19 @@ export function MigrationApplyForm() {
   const applyDkpRow = useCallback(
     (row: DkpLookupRow, columns: DkpLookupColumn[]) => {
       // Resolve each canonical key by finding the first column whose
-      // label matches that key's regex. We resolve all keys up-front so
-      // the merge below can run inside one setState batch.
+      // label matches that key's regex. Track claimed column labels so
+      // a label that matches multiple patterns (e.g. "T4 Kill Points"
+      // matches both T4 and KP regexes) only gets assigned once — to
+      // the more specific pattern, which we run earlier in the array.
       const fills: Partial<Record<OcrFieldKey, string>> = {};
+      const claimed = new Set<string>();
       for (const [re, key] of DKP_COLUMN_PATTERNS) {
         if (key in fills) continue;
-        const col = columns.find((c) => re.test(c.label));
+        const col = columns.find(
+          (c) => !claimed.has(c.label) && re.test(c.label),
+        );
         if (!col) continue;
+        claimed.add(col.label);
         const raw = row.data[col.label];
         if (raw == null || raw === "") continue;
         const asString = String(raw);
