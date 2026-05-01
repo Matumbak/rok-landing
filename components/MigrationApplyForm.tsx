@@ -19,6 +19,8 @@ import {
   Sparkles,
   ShieldAlert,
   ShieldCheck,
+  X as XIcon,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn, formatOcrNumeric } from "@/lib/utils";
@@ -293,6 +295,10 @@ export function MigrationApplyForm() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState<string | null>(null);
+  /** URL of the image currently shown in the full-screen lightbox, or
+   *  null when closed. The form lifts this state so any Gallery can
+   *  trigger preview without each owning its own modal. */
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   /**
    * Fields that were filled by OCR (and not since touched by the user).
@@ -797,6 +803,7 @@ export function MigrationApplyForm() {
   }
 
   return (
+    <>
     <form
       id={formId}
       onSubmit={onSubmit}
@@ -825,6 +832,7 @@ export function MigrationApplyForm() {
         <Gallery
           files={files.filter((f) => f.category === "account")}
           onRemove={removeFile}
+          onPreview={setLightboxUrl}
         />
 
         <p className="text-[11px] uppercase tracking-wider text-muted mt-6">
@@ -963,6 +971,7 @@ export function MigrationApplyForm() {
         <Gallery
           files={files.filter((f) => f.category === "verification")}
           onRemove={removeFile}
+          onPreview={setLightboxUrl}
         />
         <ScoutVerificationStatus
           files={files.filter((f) => f.category === "verification")}
@@ -991,6 +1000,7 @@ export function MigrationApplyForm() {
         <Gallery
           files={files.filter((f) => f.category === "commander")}
           onRemove={removeFile}
+          onPreview={setLightboxUrl}
         />
         <Grid>
           <Field
@@ -1016,6 +1026,7 @@ export function MigrationApplyForm() {
         <Gallery
           files={files.filter((f) => f.category === "resource")}
           onRemove={removeFile}
+          onPreview={setLightboxUrl}
         />
 
         <p className="text-[11px] uppercase tracking-wider text-muted mt-6">
@@ -1110,6 +1121,7 @@ export function MigrationApplyForm() {
         <Gallery
           files={files.filter((f) => f.category === "dkp")}
           onRemove={removeFile}
+          onPreview={setLightboxUrl}
         />
         <Grid>
           <Field
@@ -1223,6 +1235,67 @@ export function MigrationApplyForm() {
         </Button>
       </div>
     </form>
+    {lightboxUrl && (
+      <Lightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
+    )}
+    </>
+  );
+}
+
+/**
+ * Full-screen image viewer for the form's gallery thumbnails. Click
+ * anywhere outside the image (or press Escape) to close. We render the
+ * image using its current preview URL — that's the local Blob object
+ * URL while uploading, then the public Vercel Blob URL once ready —
+ * either works for a same-origin <img>.
+ */
+function Lightbox(props: { url: string; onClose: () => void }) {
+  // Close on Escape — small affordance, the click-outside backdrop is
+  // the primary close path.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") props.onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [props]);
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      onClick={props.onClose}
+      className="fixed inset-0 z-50 bg-background-deep/90 backdrop-blur-sm flex items-center justify-center p-4 md:p-8 cursor-zoom-out"
+    >
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          props.onClose();
+        }}
+        className="absolute top-3 right-3 inline-flex items-center justify-center h-9 w-9 border border-border-bronze/60 bg-card/80 text-foreground hover:border-accent transition"
+        aria-label="Close preview"
+      >
+        <XIcon className="h-4 w-4" />
+      </button>
+      <a
+        href={props.url}
+        target="_blank"
+        rel="noreferrer noopener"
+        onClick={(e) => e.stopPropagation()}
+        className="absolute top-3 left-3 inline-flex items-center gap-1 px-3 h-9 border border-border-bronze/60 bg-card/80 text-foreground hover:border-accent text-xs uppercase tracking-[0.15em] transition"
+      >
+        <ExternalLink className="h-3.5 w-3.5" />
+        Open
+      </a>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={props.url}
+        alt="screenshot preview"
+        onClick={(e) => e.stopPropagation()}
+        className="max-w-full max-h-full object-contain cursor-default"
+      />
+    </div>
   );
 }
 
@@ -1582,6 +1655,7 @@ function DropZone(props: {
 function Gallery(props: {
   files: Pending[];
   onRemove: (id: string) => void;
+  onPreview: (url: string) => void;
 }) {
   if (props.files.length === 0) return null;
   return (
@@ -1591,14 +1665,27 @@ function Gallery(props: {
           key={f.id}
           className="relative aspect-square border border-border-bronze/50 bg-background-deep/40 overflow-hidden group"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={f.preview}
-            alt={f.label ?? "screenshot"}
-            className="w-full h-full object-cover"
-          />
+          {/* Click-to-preview area covers the full thumbnail. Status
+           *  badges sit on top with pointer-events:none so clicks fall
+           *  through to this button; the trash button has its own
+           *  higher z-index + stopPropagation so removing doesn't open
+           *  the lightbox. */}
+          <button
+            type="button"
+            onClick={() => props.onPreview(f.url ?? f.preview)}
+            disabled={f.status === "error"}
+            className="absolute inset-0 w-full h-full focus:outline-none focus:ring-2 focus:ring-accent"
+            aria-label={`Preview ${f.label ?? "screenshot"}`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={f.preview}
+              alt={f.label ?? "screenshot"}
+              className="w-full h-full object-cover"
+            />
+          </button>
           {f.status === "uploading" && (
-            <div className="absolute inset-0 flex items-center justify-center bg-background-deep/70">
+            <div className="absolute inset-0 flex items-center justify-center bg-background-deep/70 pointer-events-none">
               <Loader2 className="h-5 w-5 text-accent animate-spin" />
             </div>
           )}
