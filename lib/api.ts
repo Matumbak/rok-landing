@@ -190,11 +190,16 @@ export type MigrationSubmitBody = {
   /** Last-KvK stats from the applicant's DKP-scan row. Distinct from
    *  the account-wide power/killPoints/etc. — these reflect last KvK
    *  only, so we never overwrite the lifetime account stats. */
-  prevKvkPower?: string | null;
   prevKvkKillPoints?: string | null;
   prevKvkT4Kills?: string | null;
   prevKvkT5Kills?: string | null;
   prevKvkDeaths?: string | null;
+
+  /** Snapshot of what OCR / DKP-lookup last extracted for the watched
+   *  field set. Server normalizes (parseRokNumber / parseRokDuration)
+   *  and stores in `ocrAutofill` JSON column so admin can flag fields
+   *  the applicant edited away from the auto-filled value. */
+  ocrAutofill?: Record<string, string> | null;
 
   activityHours?: string | null;
   timezone?: string | null;

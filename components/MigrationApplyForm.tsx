@@ -64,12 +64,33 @@ const NUMERIC_OCR_FIELDS = new Set([
   "gold",
   "maxValorPoints",
   "previousKvkDkp",
-  "prevKvkPower",
   "prevKvkKillPoints",
   "prevKvkT4Kills",
   "prevKvkT5Kills",
   "prevKvkDeaths",
 ]);
+
+/** Watched-field set the admin uses for "applicant edited the parsed
+ *  value" drift flags. Mirror of rok-api/lib/migration-application.ts.
+ *  We collect a snapshot of whatever OCR returned for these and ship
+ *  it to the server alongside the final form values. */
+const DRIFT_WATCHED_KEYS = [
+  "power",
+  "killPoints",
+  "t4Kills",
+  "t5Kills",
+  "deaths",
+  "food",
+  "wood",
+  "stone",
+  "gold",
+  "speedupsConstruction",
+  "speedupsResearch",
+  "speedupsTraining",
+  "speedupsHealing",
+  "speedupsUniversal",
+] as const;
+type DriftWatchedKey = (typeof DRIFT_WATCHED_KEYS)[number];
 
 /**
  * Heuristic mapping from DKP-scan column labels to form-state keys.
@@ -86,7 +107,6 @@ const NUMERIC_OCR_FIELDS = new Set([
  * want counts.
  */
 const DKP_COLUMN_PATTERNS: Array<[RegExp, OcrFieldKey]> = [
-  [/(?:^|[\s_])power\b|^мощь$|^мощ/iu, "prevKvkPower"],
   [/kill\s*points|^kp\b|очки\s*убийств/iu, "prevKvkKillPoints"],
   [
     /(?:^|[\s_])t\s*4\b|tier\s*4\b|т\s*4\b|тир\s*4\b/iu,
@@ -122,7 +142,6 @@ const OCR_FIELD_KEYS = [
   "maxValorPoints",
   "accountBornAt",
   "previousKvkDkp",
-  "prevKvkPower",
   "prevKvkKillPoints",
   "prevKvkT4Kills",
   "prevKvkT5Kills",
@@ -197,7 +216,6 @@ interface FormState {
   speedupsHealing: string;
 
   previousKvkDkp: string;
-  prevKvkPower: string;
   prevKvkKillPoints: string;
   prevKvkT4Kills: string;
   prevKvkT5Kills: string;
@@ -242,7 +260,6 @@ const EMPTY_STATE: FormState = {
   speedupsHealing: "",
 
   previousKvkDkp: "",
-  prevKvkPower: "",
   prevKvkKillPoints: "",
   prevKvkT4Kills: "",
   prevKvkT5Kills: "",
@@ -286,6 +303,17 @@ export function MigrationApplyForm() {
     () => new Set<OcrFieldKey>(),
   );
 
+  /**
+   * Latest raw value OCR returned for each watched field (used to ship
+   * a `ocrAutofill` snapshot alongside submit). Distinct from the
+   * `extracted` Set: this records WHAT was parsed, not just THAT a
+   * parse occurred. We always overwrite — the freshest OCR pass wins,
+   * matching what the form-state field probably ended up with too.
+   */
+  const [autofillSnapshot, setAutofillSnapshot] = useState<
+    Partial<Record<DriftWatchedKey, string>>
+  >({});
+
   /** Concatenated OCR text from every successfully OCR'd screenshot. */
 
   // Restore draft from localStorage on mount. We persist both the form
@@ -311,6 +339,14 @@ export function MigrationApplyForm() {
         // ignore
       }
     }
+    const autofillRaw = localStorage.getItem(`${DRAFT_KEY}-autofill`);
+    if (autofillRaw) {
+      try {
+        setAutofillSnapshot(JSON.parse(autofillRaw));
+      } catch {
+        // ignore
+      }
+    }
   }, []);
 
   // Persist draft + extracted set on every change.
@@ -326,6 +362,14 @@ export function MigrationApplyForm() {
       JSON.stringify([...extracted]),
     );
   }, [extracted]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(
+      `${DRAFT_KEY}-autofill`,
+      JSON.stringify(autofillSnapshot),
+    );
+  }, [autofillSnapshot]);
 
   const update = useCallback(
     <K extends keyof FormState>(key: K, value: FormState[K]) => {
@@ -357,6 +401,23 @@ export function MigrationApplyForm() {
    */
   const applyOcr = useCallback(
     (stats: ParsedRokScreen) => {
+      // Capture the raw OCR values for the watched-field set BEFORE
+      // any merge logic — this snapshot is the ground truth admin
+      // compares against, regardless of whether we overwrote the form
+      // state or kept what the user typed.
+      setAutofillSnapshot((prev) => {
+        const next = { ...prev };
+        let changed = false;
+        for (const k of DRIFT_WATCHED_KEYS) {
+          const v = stats[k as keyof ParsedRokScreen];
+          if (v == null || typeof v !== "string" || v.length === 0) continue;
+          if (next[k] === v) continue;
+          next[k] = v;
+          changed = true;
+        }
+        return changed ? next : prev;
+      });
+
       setState((s) => {
         const next = { ...s };
         const justFilled = new Set<OcrFieldKey>();
@@ -673,11 +734,13 @@ export function MigrationApplyForm() {
           speedupsMinutes: null,
 
           previousKvkDkp: state.previousKvkDkp.trim() || null,
-          prevKvkPower: state.prevKvkPower.trim() || null,
           prevKvkKillPoints: state.prevKvkKillPoints.trim() || null,
           prevKvkT4Kills: state.prevKvkT4Kills.trim() || null,
           prevKvkT5Kills: state.prevKvkT5Kills.trim() || null,
           prevKvkDeaths: state.prevKvkDeaths.trim() || null,
+
+          ocrAutofill:
+            Object.keys(autofillSnapshot).length > 0 ? autofillSnapshot : null,
 
           marches: state.marches.trim()
             ? Number.parseInt(state.marches.trim(), 10) || null
@@ -705,6 +768,7 @@ export function MigrationApplyForm() {
           localStorage.removeItem(DRAFT_KEY);
           localStorage.removeItem(`${DRAFT_KEY}-session`);
           localStorage.removeItem(`${DRAFT_KEY}-extracted`);
+          localStorage.removeItem(`${DRAFT_KEY}-autofill`);
         }
       } catch (err) {
         setSubmitError((err as Error).message ?? "submit_failed");
@@ -1082,13 +1146,6 @@ export function MigrationApplyForm() {
             onChange={(v) => update("prevKvkKillPoints", v)}
             placeholder="38M"
             extracted={extracted.has("prevKvkKillPoints")}
-          />
-          <Field
-            label="Last KvK · Power (snapshot)"
-            value={state.prevKvkPower}
-            onChange={(v) => update("prevKvkPower", v)}
-            placeholder="84M"
-            extracted={extracted.has("prevKvkPower")}
           />
         </Grid>
       </Section>
