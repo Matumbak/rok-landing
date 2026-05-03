@@ -36,16 +36,21 @@ import {
   uploadScreenshot,
 } from "@/lib/api";
 
+/** Spending bracket labels with Zoe Guides $/mo bands as the canonical
+ *  reference. Players already calibrate against Zoe's tiers in community
+ *  discussions, so showing the same dollar ranges removes ambiguity:
+ *  applicants don't have to guess "what counts as whale". */
 const SPENDING_TIER_OPTIONS: {
   value: SpendingTier;
   label: string;
+  monthly: string;
 }[] = [
-  { value: "f2p", label: "F2P" },
-  { value: "low", label: "Low" },
-  { value: "mid", label: "Mid" },
-  { value: "high", label: "High" },
-  { value: "whale", label: "Whale" },
-  { value: "kraken", label: "Kraken" },
+  { value: "f2p",    label: "F2P",    monthly: "$0" },
+  { value: "low",    label: "Low",    monthly: "$1–200/mo" },
+  { value: "mid",    label: "Mid",    monthly: "$200–1k/mo" },
+  { value: "high",   label: "High",   monthly: "$1k–5k/mo" },
+  { value: "whale",  label: "Whale",  monthly: "$5k–20k/mo" },
+  { value: "kraken", label: "Kraken", monthly: "$20k+/mo" },
 ];
 
 const DRAFT_KEY = "huns-migration-apply-draft-v1";
@@ -1476,7 +1481,7 @@ function SpendingTierPicker(props: {
             type="button"
             onClick={() => props.onChange(opt.value)}
             className={cn(
-              "border px-3 py-3 text-center transition",
+              "border px-3 py-2.5 text-center transition flex flex-col items-center gap-0.5",
               active
                 ? "border-accent bg-accent/15 text-accent-bright"
                 : "border-border-bronze/70 bg-background-deep/40 text-foreground hover:border-accent/60",
@@ -1489,6 +1494,14 @@ function SpendingTierPicker(props: {
               )}
             >
               {opt.label}
+            </span>
+            <span
+              className={cn(
+                "text-[10px] tabular-nums",
+                active ? "text-accent-bright/80" : "text-muted",
+              )}
+            >
+              {opt.monthly}
             </span>
           </button>
         );
