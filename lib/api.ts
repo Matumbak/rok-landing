@@ -203,6 +203,11 @@ export type MigrationSubmitBody = {
    *  absolute output. */
   prevKvkRank?: number | null;
   prevKvkScanActiveCount?: number | null;
+  /** Detected seed group (Imperium / A / B / C / D) from the
+   *  applicant's home kingdom — set server-side at lookup time and
+   *  forwarded here. Null = unknown. SoC scoring picks the matching
+   *  per-seed benchmark when present. */
+  detectedSeed?: "Imperium" | "A" | "B" | "C" | "D" | null;
 
   /** Snapshot of what OCR / DKP-lookup last extracted for the watched
    *  field set. Server normalizes (parseRokNumber / parseRokDuration)
@@ -252,6 +257,16 @@ export type DkpLookupResult =
        *  Lower = better. Null when applicant didn't fight (filtered
        *  out as inactive) or when no DKP column was found. */
       rankAmongActive?: number | null;
+      /** Applicant's home kingdom_id, derived from the row's KD column.
+       *  Used by the server to look up their seed group; sent here so
+       *  the form can display "kingdom 3091 → Group B" if useful. */
+      homeKingdomId?: number | null;
+      /** Applicant's detected seed group (Imperium / A / B / C / D)
+       *  from KingdomSeed[homeKingdomId] lookup. Sent verbatim with
+       *  the migration submit so SoC scoring picks the right
+       *  per-seed benchmark. Null when the home kingdom isn't in the
+       *  imported KingdomSeed snapshot. */
+      detectedSeed?: "Imperium" | "A" | "B" | "C" | "D" | null;
     }
   | {
       ok: false;

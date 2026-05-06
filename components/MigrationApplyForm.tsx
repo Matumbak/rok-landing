@@ -359,6 +359,13 @@ export function MigrationApplyForm() {
     activeCount: number | null;
   }>({ rank: null, activeCount: null });
 
+  /** Applicant's detected seed group from KingdomSeed[homeKD] lookup.
+   *  Set when a DKP scan is uploaded; cleared on submit. SoC scoring
+   *  uses this to pick the matching per-seed benchmark. */
+  const [detectedSeed, setDetectedSeed] = useState<
+    "Imperium" | "A" | "B" | "C" | "D" | null
+  >(null);
+
   /** Concatenated OCR text from every successfully OCR'd screenshot. */
 
   // Restore draft from localStorage on mount. We persist both the form
@@ -529,6 +536,7 @@ export function MigrationApplyForm() {
       row: DkpLookupRow,
       columns: DkpLookupColumn[],
       position?: { activeCount: number; rankAmongActive: number | null },
+      seed?: "Imperium" | "A" | "B" | "C" | "D" | null,
     ) => {
       // Capture position metadata for the submit body. activeCount + rank
       // come straight from the lookup endpoint's view of the scan.
@@ -538,6 +546,9 @@ export function MigrationApplyForm() {
           activeCount: position.activeCount,
         });
       }
+      // Detected seed (from KingdomSeed[homeKD]). Stays null when the
+      // home kingdom isn't in our imported snapshot.
+      if (seed !== undefined) setDetectedSeed(seed);
       // Resolve each canonical key by finding the first column whose
       // label matches that key's regex. Track claimed column labels so
       // a label that matches multiple patterns (e.g. "T4 Kill Points"
@@ -806,6 +817,7 @@ export function MigrationApplyForm() {
           prevKvkDeaths: state.prevKvkDeaths.trim() || null,
           prevKvkRank: prevKvkPosition.rank ?? null,
           prevKvkScanActiveCount: prevKvkPosition.activeCount ?? null,
+          detectedSeed: detectedSeed ?? null,
 
           ocrAutofill:
             Object.keys(autofillSnapshot).length > 0 ? autofillSnapshot : null,
@@ -1382,6 +1394,8 @@ function DkpScanLookup(props: {
      *  the form can ship `prevKvkRank` + `prevKvkScanActiveCount` to
      *  the API for the position-aware scoring component. */
     position?: { activeCount: number; rankAmongActive: number | null },
+    /** Detected seed group from the applicant's home kingdom. */
+    seed?: "Imperium" | "A" | "B" | "C" | "D" | null,
   ) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -1416,7 +1430,12 @@ function DkpScanLookup(props: {
                 rankAmongActive: res.rankAmongActive ?? null,
               }
             : undefined;
-        props.onResult(res.row, res.columns, position);
+        props.onResult(
+          res.row,
+          res.columns,
+          position,
+          res.detectedSeed ?? null,
+        );
         setStatus({ state: "matched", row: res.row, filename: file.name });
       } else {
         setStatus({
