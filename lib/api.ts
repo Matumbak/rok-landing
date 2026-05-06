@@ -197,6 +197,13 @@ export type MigrationSubmitBody = {
   prevKvkT5Kills?: string | null;
   prevKvkDeaths?: string | null;
 
+  /** Applicant's rank within their source-kingdom DKP scan, captured
+   *  from /api/dkp/lookup when they upload their KvK export. Lets the
+   *  scoring engine reward "top X of Y" position independently of
+   *  absolute output. */
+  prevKvkRank?: number | null;
+  prevKvkScanActiveCount?: number | null;
+
   /** Snapshot of what OCR / DKP-lookup last extracted for the watched
    *  field set. Server normalizes (parseRokNumber / parseRokDuration)
    *  and stores in `ocrAutofill` JSON column so admin can flag fields
@@ -237,6 +244,14 @@ export type DkpLookupResult =
       ok: true;
       row: DkpLookupRow;
       columns: DkpLookupColumn[];
+      /** Total active fighters in the uploaded scan (filtered by
+       *  dkp > 0 OR t5 > 100K). Used as denominator for the rank
+       *  percentile that gets sent with the submit. */
+      activeCount?: number;
+      /** Applicant's rank among active fighters, sorted by DKP desc.
+       *  Lower = better. Null when applicant didn't fight (filtered
+       *  out as inactive) or when no DKP column was found. */
+      rankAmongActive?: number | null;
     }
   | {
       ok: false;

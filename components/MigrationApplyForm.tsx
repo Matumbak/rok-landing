@@ -349,6 +349,16 @@ export function MigrationApplyForm() {
     Partial<Record<DriftWatchedKey, string>>
   >({});
 
+  /** Position metadata from the applicant's DKP-scan upload (rank +
+   *  active-fighter denominator). Lives outside FormState because the
+   *  values aren't user-typeable — they're derived from the lookup
+   *  endpoint and only update when a scan is uploaded. Sent verbatim to
+   *  the API at submit time. */
+  const [prevKvkPosition, setPrevKvkPosition] = useState<{
+    rank: number | null;
+    activeCount: number | null;
+  }>({ rank: null, activeCount: null });
+
   /** Concatenated OCR text from every successfully OCR'd screenshot. */
 
   // Restore draft from localStorage on mount. We persist both the form
@@ -515,7 +525,19 @@ export function MigrationApplyForm() {
    * already typed something, we keep it.
    */
   const applyDkpRow = useCallback(
-    (row: DkpLookupRow, columns: DkpLookupColumn[]) => {
+    (
+      row: DkpLookupRow,
+      columns: DkpLookupColumn[],
+      position?: { activeCount: number; rankAmongActive: number | null },
+    ) => {
+      // Capture position metadata for the submit body. activeCount + rank
+      // come straight from the lookup endpoint's view of the scan.
+      if (position && position.activeCount > 0) {
+        setPrevKvkPosition({
+          rank: position.rankAmongActive,
+          activeCount: position.activeCount,
+        });
+      }
       // Resolve each canonical key by finding the first column whose
       // label matches that key's regex. Track claimed column labels so
       // a label that matches multiple patterns (e.g. "T4 Kill Points"
@@ -782,6 +804,8 @@ export function MigrationApplyForm() {
           prevKvkT4Kills: state.prevKvkT4Kills.trim() || null,
           prevKvkT5Kills: state.prevKvkT5Kills.trim() || null,
           prevKvkDeaths: state.prevKvkDeaths.trim() || null,
+          prevKvkRank: prevKvkPosition.rank ?? null,
+          prevKvkScanActiveCount: prevKvkPosition.activeCount ?? null,
 
           ocrAutofill:
             Object.keys(autofillSnapshot).length > 0 ? autofillSnapshot : null,
@@ -1351,7 +1375,14 @@ function Lightbox(props: { url: string; onClose: () => void }) {
  */
 function DkpScanLookup(props: {
   governorId: string;
-  onResult: (row: DkpLookupRow, columns: DkpLookupColumn[]) => void;
+  onResult: (
+    row: DkpLookupRow,
+    columns: DkpLookupColumn[],
+    /** Position metadata captured from the lookup response. Used so
+     *  the form can ship `prevKvkRank` + `prevKvkScanActiveCount` to
+     *  the API for the position-aware scoring component. */
+    position?: { activeCount: number; rankAmongActive: number | null },
+  ) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   type Status =
@@ -1378,7 +1409,14 @@ function DkpScanLookup(props: {
     try {
       const res = await lookupDkpRow({ file, governorId: govId });
       if (res.ok) {
-        props.onResult(res.row, res.columns);
+        const position =
+          typeof res.activeCount === "number"
+            ? {
+                activeCount: res.activeCount,
+                rankAmongActive: res.rankAmongActive ?? null,
+              }
+            : undefined;
+        props.onResult(res.row, res.columns, position);
         setStatus({ state: "matched", row: res.row, filename: file.name });
       } else {
         setStatus({
@@ -1412,7 +1450,7 @@ function DkpScanLookup(props: {
           ) : (
             <Upload className="h-4 w-4" />
           )}
-          Upload KvK scan (xlsx)
+          Upload KvK scan (xlsx / csv)
         </Button>
         <p className="text-xs text-muted">
           {govIdReady
@@ -1422,7 +1460,7 @@ function DkpScanLookup(props: {
         <input
           ref={inputRef}
           type="file"
-          accept=".xlsx,.xlsm,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          accept=".xlsx,.xlsm,.xls,.csv,.tsv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
           className="hidden"
           onChange={onPick}
         />
