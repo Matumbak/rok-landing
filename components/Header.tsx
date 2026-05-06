@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { HunsMark } from "@/components/HunsMark";
 import { DISCORD_URL, KINGDOM_ID, NAV_ITEMS } from "@/lib/data";
+import { useT, useLocale } from "@/lib/i18n";
 
 const DiscordIcon = () => (
   <svg
@@ -23,6 +24,7 @@ export function Header() {
   const [scrolled, setScrolled] = React.useState(false);
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const pathname = usePathname();
+  const t = useT();
 
   React.useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -74,7 +76,7 @@ export function Header() {
                       : "text-muted hover:text-accent",
                   )}
                 >
-                  {item.label}
+                  {t(`nav.${item.tKey}`)}
                   {active && (
                     <span className="absolute -bottom-2 left-0 right-0 h-px bg-accent" />
                   )}
@@ -83,7 +85,8 @@ export function Header() {
             })}
           </nav>
 
-          <div className="hidden md:flex">
+          <div className="hidden md:flex items-center gap-3">
+            <LangToggle />
             <a
               href={DISCORD_URL}
               target="_blank"
@@ -91,7 +94,7 @@ export function Header() {
             >
               <Button variant="discord" size="sm">
                 <DiscordIcon />
-                Discord
+                {t("nav.discord")}
               </Button>
             </a>
           </div>
@@ -99,7 +102,7 @@ export function Header() {
           <button
             type="button"
             className="md:hidden text-foreground"
-            aria-label="Toggle menu"
+            aria-label={t("nav.toggleMenu")}
             onClick={() => setMobileOpen((v) => !v)}
           >
             {mobileOpen ? (
@@ -123,24 +126,62 @@ export function Header() {
                     active ? "text-accent" : "text-muted hover:text-accent",
                   )}
                 >
-                  {item.label}
+                  {t(`nav.${item.tKey}`)}
                 </Link>
               );
             })}
-            <a
-              href={DISCORD_URL}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="pt-2"
-            >
-              <Button variant="discord" size="sm" className="w-full">
-                <DiscordIcon />
-                Discord
-              </Button>
-            </a>
+            <div className="pt-2 flex items-center gap-3">
+              <LangToggle />
+              <a
+                href={DISCORD_URL}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="flex-1"
+              >
+                <Button variant="discord" size="sm" className="w-full">
+                  <DiscordIcon />
+                  {t("nav.discord")}
+                </Button>
+              </a>
+            </div>
           </div>
         )}
       </div>
     </header>
+  );
+}
+
+/**
+ * Two-state EN/RU pill. Auto-detection (browser language) decides the
+ * initial value, but officers running an English-locale OS still want
+ * to read the form in Russian (or vice versa) — so we expose a manual
+ * override that persists in localStorage.
+ */
+function LangToggle() {
+  const { locale, setLocale } = useLocale();
+  const t = useT();
+  return (
+    <div
+      role="group"
+      aria-label={t("langSwitch.label")}
+      className="inline-flex border border-border-bronze/60 bg-background-deep/40"
+    >
+      {(["en", "ru"] as const).map((l) => (
+        <button
+          key={l}
+          type="button"
+          onClick={() => setLocale(l)}
+          className={cn(
+            "px-2 py-1 text-[10px] font-display tracking-[0.2em] uppercase transition-colors",
+            locale === l
+              ? "bg-accent/15 text-accent-bright"
+              : "text-muted hover:text-foreground",
+          )}
+          aria-pressed={locale === l}
+        >
+          {t(`langSwitch.${l}`)}
+        </button>
+      ))}
+    </div>
   );
 }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cinzel, Inter } from "next/font/google";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { I18nProvider } from "@/lib/i18n";
 import "./globals.css";
 
 const cinzel = Cinzel({
@@ -30,9 +31,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${cinzel.variable} ${inter.variable}`}>
       <body className="antialiased text-foreground flex min-h-screen flex-col">
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <I18nProvider>
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </I18nProvider>
       </body>
     </html>
   );

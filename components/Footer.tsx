@@ -1,6 +1,10 @@
+"use client";
+
 import { DISCORD_URL, KINGDOM_ID } from "@/lib/data";
+import { useT } from "@/lib/i18n";
 
 export function Footer() {
+  const t = useT();
   return (
     <footer className="relative mt-12 border-t border-border-bronze/60">
       <div
@@ -9,7 +13,7 @@ export function Footer() {
       />
       <div className="mx-auto max-w-7xl px-6 lg:px-8 py-10 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="font-display tracking-[0.4em] uppercase text-xs text-muted">
-          {KINGDOM_ID} Huns · Rise of Kingdoms
+          {t("footer.tagline", { id: KINGDOM_ID })}
         </div>
         <a
           href={DISCORD_URL}
@@ -17,7 +21,7 @@ export function Footer() {
           rel="noreferrer noopener"
           className="text-xs font-display uppercase tracking-[0.4em] text-muted hover:text-accent transition-colors"
         >
-          Join Discord →
+          {t("footer.discord")}
         </a>
       </div>
     </footer>

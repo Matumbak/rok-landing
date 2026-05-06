@@ -14,13 +14,16 @@ export const KINGDOM_ID = "4028";
 export const KINGDOM_NAME = "HUNS";
 export const DISCORD_URL = "https://discord.gg/huns";
 
-export type NavItem = { label: string; href: string };
+/** `tKey` resolves under the `nav.*` translation namespace. `label` is
+ *  kept as the English fallback for places that haven't been migrated
+ *  to useT yet (none right now, but cheap to keep). */
+export type NavItem = { label: string; tKey: string; href: string };
 
 export const NAV_ITEMS: NavItem[] = [
-  { label: "Home", href: "/" },
-  { label: "DKP", href: "/dkp" },
-  { label: "Migration", href: "/migration" },
-  { label: "Media", href: "/media" },
+  { label: "Home", tKey: "home", href: "/" },
+  { label: "DKP", tKey: "dkp", href: "/dkp" },
+  { label: "Migration", tKey: "migration", href: "/migration" },
+  { label: "Media", tKey: "media", href: "/media" },
 ];
 
 export type KingdomStat = {

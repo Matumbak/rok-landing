@@ -10,11 +10,7 @@ export const metadata: Metadata = {
 export default function DkpPage() {
   return (
     <>
-      <PageHero
-        eyebrow="Leaderboard"
-        title="DKP Standings"
-        description="Ranked by combined kill points and rally contribution this season. Updated after every KvK pass."
-      />
+      <PageHero tKey="pages.dkp" />
       <DkpStandings />
     </>
   );

@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn, formatOcrNumeric } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
 import { compressImage } from "@/lib/compress";
 import { parseUploadedScreen, type ParsedRokScreen } from "@/lib/ocr/extract";
 import {
@@ -203,7 +204,6 @@ interface FormState {
   governorId: string;
   nickname: string;
   currentKingdom: string;
-  currentAlliance: string;
   power: string;
   killPoints: string;
   vipLevel: string;
@@ -261,7 +261,6 @@ const EMPTY_STATE: FormState = {
   governorId: "",
   nickname: "",
   currentKingdom: "",
-  currentAlliance: "",
   power: "",
   killPoints: "",
   vipLevel: "",
@@ -309,6 +308,7 @@ function genSessionId(): string {
 }
 
 export function MigrationApplyForm() {
+  const t = useT();
   const formId = useId();
   const [sessionId] = useState<string>(() => {
     if (typeof window === "undefined") return genSessionId();
@@ -780,7 +780,10 @@ export function MigrationApplyForm() {
           governorId: state.governorId.trim(),
           nickname: state.nickname.trim(),
           currentKingdom: state.currentKingdom.trim(),
-          currentAlliance: state.currentAlliance.trim() || null,
+          // alliance removed from the form — applicant doesn't need to
+          // disclose it. API field is optional/nullable so we just send
+          // null.
+          currentAlliance: null,
           power: state.power.trim(),
           killPoints: state.killPoints.trim(),
           vipLevel: state.vipLevel.trim(),
@@ -864,13 +867,14 @@ export function MigrationApplyForm() {
       <div className="border border-accent/40 bg-card/60 backdrop-blur-sm p-8 md:p-12 text-center">
         <CheckCircle2 className="mx-auto h-12 w-12 text-accent" />
         <h3 className="mt-4 font-display text-3xl uppercase tracking-wider engraved">
-          Application received
+          {t("form.received.title")}
         </h3>
         <p className="mt-3 text-muted">
-          Reference: <span className="text-accent font-mono">{submitted}</span>
+          {t("form.received.reference")}{" "}
+          <span className="text-accent font-mono">{submitted}</span>
         </p>
         <p className="mt-2 text-sm text-muted">
-          An officer will reach out on Discord within 48 hours.
+          {t("form.received.followup")}
         </p>
       </div>
     );
@@ -885,18 +889,16 @@ export function MigrationApplyForm() {
     >
       <header>
         <h2 className="font-display text-3xl md:text-4xl uppercase tracking-wider engraved">
-          Apply for migration
+          {t("form.intro.title")}
         </h2>
         <p className="mt-2 text-sm md:text-base text-muted max-w-2xl">
-          Fill the brief, attach screenshots from your profile, top commanders
-          and resources. An officer reviews every application within 48h on
-          Discord.
+          {t("form.intro.subtitle")}
         </p>
       </header>
 
       <Section
-        title="Profile"
-        subtitle="Drop your governor profile, kill data popup, troop details, individual stats and lost troops screens first — fields below auto-fill via OCR. Edit anything that came out wrong."
+        title={t("form.sections.profile.title")}
+        subtitle={t("form.sections.profile.subtitle")}
       >
         <DropZone
           category="account"
@@ -910,115 +912,109 @@ export function MigrationApplyForm() {
         />
 
         <p className="text-[11px] uppercase tracking-wider text-muted mt-6">
-          Identity
+          {t("form.groups.identity")}
         </p>
         <Grid>
           <Field
-            label="Governor ID"
+            label={t("form.fields.governorId")}
             required
             value={state.governorId}
             onChange={(v) => update("governorId", v)}
-            placeholder="124000000"
+            placeholder={t("form.placeholders.governorId")}
             extracted={extracted.has("governorId")}
           />
           <Field
-            label="In-game nickname"
+            label={t("form.fields.nickname")}
             required
             value={state.nickname}
             onChange={(v) => update("nickname", v)}
-            placeholder="WarDaddyChadski"
+            placeholder={t("form.placeholders.nickname")}
             extracted={extracted.has("nickname")}
           />
           <Field
-            label="Current kingdom"
+            label={t("form.fields.currentKingdom")}
             required
             value={state.currentKingdom}
             onChange={(v) => update("currentKingdom", v)}
-            placeholder="3450"
+            placeholder={t("form.placeholders.currentKingdom")}
           />
           <Field
-            label="Current alliance (optional)"
-            value={state.currentAlliance}
-            onChange={(v) => update("currentAlliance", v)}
-            placeholder="HUN"
-          />
-          <Field
-            label="Discord handle"
+            label={t("form.fields.discordHandle")}
             required
             value={state.discordHandle}
             onChange={(v) => update("discordHandle", v)}
-            placeholder="@yourhandle"
+            placeholder={t("form.placeholders.discordHandle")}
           />
           <Field
-            label="VIP level"
+            label={t("form.fields.vipLevel")}
             required
             value={state.vipLevel}
             onChange={(v) => update("vipLevel", v)}
-            placeholder="14"
+            placeholder={t("form.placeholders.vipLevel")}
             extracted={extracted.has("vipLevel")}
           />
         </Grid>
 
         <p className="text-[11px] uppercase tracking-wider text-muted mt-6">
-          Core
+          {t("form.groups.core")}
         </p>
         <Grid>
           <Field
-            label="Power"
+            label={t("form.fields.power")}
             required
             value={state.power}
             onChange={(v) => update("power", v)}
-            placeholder="84M"
+            placeholder={t("form.placeholders.power")}
             extracted={extracted.has("power")}
           />
           <Field
-            label="Kill points"
+            label={t("form.fields.killPoints")}
             required
             value={state.killPoints}
             onChange={(v) => update("killPoints", v)}
-            placeholder="152M"
+            placeholder={t("form.placeholders.killPoints")}
             extracted={extracted.has("killPoints")}
           />
           <Field
-            label="T4 kills"
+            label={t("form.fields.t4Kills")}
             value={state.t4Kills}
             onChange={(v) => update("t4Kills", v)}
-            placeholder="18M"
+            placeholder={t("form.placeholders.t4Kills")}
             extracted={extracted.has("t4Kills")}
           />
           <Field
-            label="T5 kills"
+            label={t("form.fields.t5Kills")}
             value={state.t5Kills}
             onChange={(v) => update("t5Kills", v)}
-            placeholder="6.4M"
+            placeholder={t("form.placeholders.t5Kills")}
             extracted={extracted.has("t5Kills")}
           />
           <Field
-            label="Deaths"
+            label={t("form.fields.deaths")}
             value={state.deaths}
             onChange={(v) => update("deaths", v)}
-            placeholder="3.2M"
+            placeholder={t("form.placeholders.deaths")}
             extracted={extracted.has("deaths")}
           />
         </Grid>
 
         <p className="text-[11px] uppercase tracking-wider text-muted mt-6">
-          KvK record
+          {t("form.groups.kvkRecord")}
         </p>
         <Grid>
           <Field
-            label="Max valor (lifetime)"
+            label={t("form.fields.maxValor")}
             value={state.maxValorPoints}
             onChange={(v) => update("maxValorPoints", v)}
-            placeholder="7.2M"
+            placeholder={t("form.placeholders.maxValor")}
             extracted={extracted.has("maxValorPoints")}
           />
         </Grid>
       </Section>
 
       <Section
-        title="Spending tier"
-        subtitle="Required. Pick the bracket that feels honest — officers don't need exact numbers."
+        title={t("form.sections.spending.title")}
+        subtitle={t("form.sections.spending.subtitle")}
       >
         <SpendingTierPicker
           value={state.spendingTier}
@@ -1027,13 +1023,12 @@ export function MigrationApplyForm() {
       </Section>
 
       <Section
-        title="Account age proof"
+        title={t("form.sections.age.title")}
         subtitle={
           <>
-            Open your <strong>Scout / Skirmisher</strong> commander
-            profile and screenshot it. We read her «Recruit Date» to
-            confirm how old your account is — any other commander is
-            rejected.
+            {t("form.sections.age.subtitle.before")}
+            <strong>{t("form.sections.age.subtitle.scout")}</strong>
+            {t("form.sections.age.subtitle.after")}
           </>
         }
       >
@@ -1053,18 +1048,18 @@ export function MigrationApplyForm() {
         />
         <Grid>
           <Field
-            label="Account created (YYYY-MM-DD)"
+            label={t("form.fields.accountBornAt")}
             value={state.accountBornAt}
             onChange={(v) => update("accountBornAt", v)}
-            placeholder="2026-02-07"
+            placeholder={t("form.placeholders.accountBornAt")}
             extracted={extracted.has("accountBornAt")}
           />
         </Grid>
       </Section>
 
       <Section
-        title="Commanders & equipment"
-        subtitle="Drop screenshots of your top commanders and their gear — officers review them by eye, no need to type names or pairs."
+        title={t("form.sections.commanders.title")}
+        subtitle={t("form.sections.commanders.subtitle")}
       >
         <DropZone
           category="commander"
@@ -1078,19 +1073,19 @@ export function MigrationApplyForm() {
         />
         <Grid>
           <Field
-            label="Marches"
+            label={t("form.fields.marches")}
             value={state.marches}
             onChange={(v) =>
               update("marches", v.replace(/[^0-9]/g, "").slice(0, 2))
             }
-            placeholder="6"
+            placeholder={t("form.placeholders.marches")}
           />
         </Grid>
       </Section>
 
       <Section
-        title="Resources & speedups"
-        subtitle="Open the in-game «Your Resources & Speedups» modal — screenshot both tabs, drop them here, then verify the auto-filled values below."
+        title={t("form.sections.resources.title")}
+        subtitle={t("form.sections.resources.subtitle")}
       >
         <DropZone
           category="resource"
@@ -1104,84 +1099,84 @@ export function MigrationApplyForm() {
         />
 
         <p className="text-[11px] uppercase tracking-wider text-muted mt-6">
-          Resources — use the «Total» column
+          {t("form.groups.resources")}
         </p>
         <Grid>
           <Field
-            label="Food"
+            label={t("form.fields.food")}
             value={state.food}
             onChange={(v) => update("food", v)}
-            placeholder="3.6B"
+            placeholder={t("form.placeholders.food")}
             extracted={extracted.has("food")}
           />
           <Field
-            label="Wood"
+            label={t("form.fields.wood")}
             value={state.wood}
             onChange={(v) => update("wood", v)}
-            placeholder="3.9B"
+            placeholder={t("form.placeholders.wood")}
             extracted={extracted.has("wood")}
           />
           <Field
-            label="Stone"
+            label={t("form.fields.stone")}
             value={state.stone}
             onChange={(v) => update("stone", v)}
-            placeholder="3.7B"
+            placeholder={t("form.placeholders.stone")}
             extracted={extracted.has("stone")}
           />
           <Field
-            label="Gold"
+            label={t("form.fields.gold")}
             value={state.gold}
             onChange={(v) => update("gold", v)}
-            placeholder="2.9B"
+            placeholder={t("form.placeholders.gold")}
             extracted={extracted.has("gold")}
           />
         </Grid>
 
         <p className="text-[11px] uppercase tracking-wider text-muted mt-6">
-          Speedups — accepted formats: «63d 12h 20m», «63 дн 12 ч 20 м», or raw minutes («720»)
+          {t("form.groups.speedups")}
         </p>
         <Grid>
           <Field
-            label="Construction"
+            label={t("form.fields.construction")}
             value={state.speedupsConstruction}
             onChange={(v) => update("speedupsConstruction", v)}
-            placeholder="63d 12h 20m"
+            placeholder={t("form.placeholders.construction")}
             extracted={extracted.has("speedupsConstruction")}
           />
           <Field
-            label="Research"
+            label={t("form.fields.research")}
             value={state.speedupsResearch}
             onChange={(v) => update("speedupsResearch", v)}
-            placeholder="88d 2h 28m"
+            placeholder={t("form.placeholders.research")}
             extracted={extracted.has("speedupsResearch")}
           />
           <Field
-            label="Training"
+            label={t("form.fields.training")}
             value={state.speedupsTraining}
             onChange={(v) => update("speedupsTraining", v)}
-            placeholder="3d 20h 49m"
+            placeholder={t("form.placeholders.training")}
             extracted={extracted.has("speedupsTraining")}
           />
           <Field
-            label="Healing"
+            label={t("form.fields.healing")}
             value={state.speedupsHealing}
             onChange={(v) => update("speedupsHealing", v)}
-            placeholder="6d 5h 55m"
+            placeholder={t("form.placeholders.healing")}
             extracted={extracted.has("speedupsHealing")}
           />
           <Field
-            label="Universal"
+            label={t("form.fields.universal")}
             value={state.speedupsUniversal}
             onChange={(v) => update("speedupsUniversal", v)}
-            placeholder="340d 18h 56m"
+            placeholder={t("form.placeholders.universal")}
             extracted={extracted.has("speedupsUniversal")}
           />
         </Grid>
       </Section>
 
       <Section
-        title="Previous KvK DKP (optional)"
-        subtitle="Drop your KvK scan spreadsheet — we look up your governor ID and pull last-KvK DKP, T4/T5, deaths automatically (kept separate from your lifetime account stats above). Or screenshot the score and type it below."
+        title={t("form.sections.prevKvk.title")}
+        subtitle={t("form.sections.prevKvk.subtitle")}
       >
         <DkpScanLookup
           governorId={state.governorId}
@@ -1199,59 +1194,59 @@ export function MigrationApplyForm() {
         />
         <Grid>
           <Field
-            label="Previous KvK DKP"
+            label={t("form.fields.previousKvkDkp")}
             value={state.previousKvkDkp}
             onChange={(v) => update("previousKvkDkp", v)}
-            placeholder="142M"
+            placeholder={t("form.placeholders.previousKvkDkp")}
             extracted={extracted.has("previousKvkDkp")}
           />
           <Field
-            label="Last KvK · T4 kills"
+            label={t("form.fields.prevKvkT4")}
             value={state.prevKvkT4Kills}
             onChange={(v) => update("prevKvkT4Kills", v)}
-            placeholder="2.4M"
+            placeholder={t("form.placeholders.prevKvkT4")}
             extracted={extracted.has("prevKvkT4Kills")}
           />
           <Field
-            label="Last KvK · T5 kills"
+            label={t("form.fields.prevKvkT5")}
             value={state.prevKvkT5Kills}
             onChange={(v) => update("prevKvkT5Kills", v)}
-            placeholder="1.1M"
+            placeholder={t("form.placeholders.prevKvkT5")}
             extracted={extracted.has("prevKvkT5Kills")}
           />
           <Field
-            label="Last KvK · Deaths"
+            label={t("form.fields.prevKvkDeaths")}
             value={state.prevKvkDeaths}
             onChange={(v) => update("prevKvkDeaths", v)}
-            placeholder="450K"
+            placeholder={t("form.placeholders.prevKvkDeaths")}
             extracted={extracted.has("prevKvkDeaths")}
           />
           <Field
-            label="Last KvK · Kill points"
+            label={t("form.fields.prevKvkKp")}
             value={state.prevKvkKillPoints}
             onChange={(v) => update("prevKvkKillPoints", v)}
-            placeholder="38M"
+            placeholder={t("form.placeholders.prevKvkKp")}
             extracted={extracted.has("prevKvkKillPoints")}
           />
         </Grid>
       </Section>
 
       <Section
-        title="About you"
-        subtitle="Optional — helps us match you to the right ops team."
+        title={t("form.sections.about.title")}
+        subtitle={t("form.sections.about.subtitle")}
       >
         <Grid>
           <Field
-            label="Activity hours"
+            label={t("form.fields.activityHours")}
             value={state.activityHours}
             onChange={(v) => update("activityHours", v)}
-            placeholder="3-4h/day, evenings"
+            placeholder={t("form.placeholders.activityHours")}
           />
           <Field
-            label="Timezone"
+            label={t("form.fields.timezone")}
             value={state.timezone}
             onChange={(v) => update("timezone", v)}
-            placeholder="UTC+2"
+            placeholder={t("form.placeholders.timezone")}
           />
         </Grid>
         <label className="flex items-center gap-3 mt-4 cursor-pointer">
@@ -1262,18 +1257,18 @@ export function MigrationApplyForm() {
             className="h-4 w-4 accent-accent"
           />
           <span className="text-sm text-foreground">
-            I already have migration scrolls ready
+            {t("form.fields.hasScrolls")}
           </span>
         </label>
         <div className="mt-4">
           <label className="block text-xs uppercase tracking-wider text-muted mb-2">
-            Why 4028?
+            {t("form.fields.reason")}
           </label>
           <textarea
             value={state.reason}
             onChange={(e) => update("reason", e.target.value)}
             rows={3}
-            placeholder="A few sentences — your KvK history, what you're looking for."
+            placeholder={t("form.placeholders.reason")}
             className="w-full bg-background-deep/60 border border-border-bronze/70 px-3 py-2 text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-accent transition"
           />
         </div>
@@ -1289,15 +1284,17 @@ export function MigrationApplyForm() {
       <div className="flex flex-col-reverse md:flex-row md:items-center md:justify-between gap-4">
         <p className="text-xs text-muted flex flex-wrap items-center gap-x-3 gap-y-1">
           <span>
-            {files.filter((f) => f.status === "ready").length} screenshots ready
+            {t("form.submit.ready", {
+              n: files.filter((f) => f.status === "ready").length,
+            })}
           </span>
           {files.some((f) => f.ocrStatus === "running") && (
             <span className="inline-flex items-center gap-1 text-accent">
               <Sparkles className="h-3 w-3 animate-pulse" />
-              OCR running…
+              {t("form.submit.ocrRunning")}
             </span>
           )}
-          <span>· draft auto-saved</span>
+          <span>{t("form.submit.draftSaved")}</span>
         </p>
         <Button type="submit" size="lg" disabled={submitting}>
           {submitting ? (
@@ -1305,7 +1302,9 @@ export function MigrationApplyForm() {
           ) : (
             <Upload className="h-5 w-5" />
           )}
-          {submitting ? "Submitting…" : "Submit application"}
+          {submitting
+            ? t("form.submit.submitting")
+            : t("form.submit.submit")}
         </Button>
       </div>
     </form>
@@ -1324,6 +1323,7 @@ export function MigrationApplyForm() {
  * either works for a same-origin <img>.
  */
 function Lightbox(props: { url: string; onClose: () => void }) {
+  const t = useT();
   // Close on Escape — small affordance, the click-outside backdrop is
   // the primary close path.
   useEffect(() => {
@@ -1348,7 +1348,7 @@ function Lightbox(props: { url: string; onClose: () => void }) {
           props.onClose();
         }}
         className="absolute top-3 right-3 inline-flex items-center justify-center h-9 w-9 border border-border-bronze/60 bg-card/80 text-foreground hover:border-accent transition"
-        aria-label="Close preview"
+        aria-label={t("form.lightbox.close")}
       >
         <XIcon className="h-4 w-4" />
       </button>
@@ -1360,12 +1360,12 @@ function Lightbox(props: { url: string; onClose: () => void }) {
         className="absolute top-3 left-3 inline-flex items-center gap-1 px-3 h-9 border border-border-bronze/60 bg-card/80 text-foreground hover:border-accent text-xs uppercase tracking-[0.15em] transition"
       >
         <ExternalLink className="h-3.5 w-3.5" />
-        Open
+        {t("form.lightbox.open")}
       </a>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={props.url}
-        alt="screenshot preview"
+        alt={t("form.lightbox.alt")}
         onClick={(e) => e.stopPropagation()}
         className="max-w-full max-h-full object-contain cursor-default"
       />
@@ -1398,6 +1398,7 @@ function DkpScanLookup(props: {
     seed?: "Imperium" | "A" | "B" | "C" | "D" | null,
   ) => void;
 }) {
+  const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   type Status =
     | { state: "idle" }
@@ -1415,7 +1416,7 @@ function DkpScanLookup(props: {
     if (!govId) {
       setStatus({
         state: "error",
-        message: "Fill the Governor ID above first — we look you up by it.",
+        message: t("form.dkpScan.noGovIdError"),
       });
       return;
     }
@@ -1447,7 +1448,7 @@ function DkpScanLookup(props: {
     } catch (err) {
       setStatus({
         state: "error",
-        message: (err as Error).message ?? "lookup_failed",
+        message: (err as Error).message ?? t("form.dkpScan.lookupFailed"),
       });
     }
   };
@@ -1469,12 +1470,12 @@ function DkpScanLookup(props: {
           ) : (
             <Upload className="h-4 w-4" />
           )}
-          Upload KvK scan (xlsx / csv)
+          {t("form.dkpScan.uploadButton")}
         </Button>
         <p className="text-xs text-muted">
           {govIdReady
-            ? "We find your row by Governor ID and pull DKP, T4/T5, deaths, etc."
-            : "Fill the Governor ID above first."}
+            ? t("form.dkpScan.hintReady")
+            : t("form.dkpScan.hintNeedId")}
         </p>
         <input
           ref={inputRef}
@@ -1490,13 +1491,13 @@ function DkpScanLookup(props: {
           <CheckCircle2 className="h-5 w-5 shrink-0 mt-0.5" />
           <div className="min-w-0">
             <div className="font-medium">
-              Found rank #{status.row.rank} —{" "}
+              {t("form.dkpScan.foundRank", { rank: status.row.rank })}{" "}
               <span className="font-mono">{status.row.nickname}</span>
               {status.row.alliance ? ` [${status.row.alliance}]` : ""}
             </div>
             <div className="text-xs text-emerald-200/80 mt-0.5 truncate">
-              From <span className="font-mono">{status.filename}</span>. Fields
-              below auto-filled where empty.
+              <span className="font-mono">{status.filename}</span> ·{" "}
+              {t("form.dkpScan.autofillNote")}
             </div>
           </div>
         </div>
@@ -1506,10 +1507,10 @@ function DkpScanLookup(props: {
           <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
           <div>
             <div className="font-medium">
-              Not in this scan ({status.scanRows} rows checked).
+              {t("form.dkpScan.notFoundTitle", { rows: status.scanRows })}
             </div>
             <div className="text-xs text-amber-100/80 mt-0.5">
-              Double-check the Governor ID, or upload a different scan.
+              {t("form.dkpScan.notFoundHint")}
             </div>
           </div>
         </div>
@@ -1598,6 +1599,7 @@ function ScoutVerificationStatus(props: {
   files: Pending[];
   accountBornAt: string;
 }) {
+  const t = useT();
   const ocrRunning = props.files.some((f) => f.ocrStatus === "running");
   const matched = props.files.find((f) => f.scoutResult === "match");
   const hasMismatch = props.files.some((f) => f.scoutResult === "mismatch");
@@ -1607,10 +1609,10 @@ function ScoutVerificationStatus(props: {
       <div className="flex items-start gap-2 mt-4 border border-emerald-500/40 bg-emerald-500/5 p-3 text-sm text-emerald-300">
         <ShieldCheck className="h-5 w-5 shrink-0 mt-0.5" />
         <div>
-          <div className="font-medium">Scout commander confirmed.</div>
+          <div className="font-medium">{t("form.scout.confirmed")}</div>
           {props.accountBornAt && (
             <div className="text-xs text-emerald-200/80 mt-0.5">
-              Account created on{" "}
+              {t("form.scout.bornOn")}{" "}
               <span className="font-mono">{props.accountBornAt}</span>
             </div>
           )}
@@ -1623,10 +1625,9 @@ function ScoutVerificationStatus(props: {
       <div className="flex items-start gap-2 mt-4 border border-amber-500/40 bg-amber-500/5 p-3 text-sm text-amber-200">
         <ShieldAlert className="h-5 w-5 shrink-0 mt-0.5" />
         <div>
-          <div className="font-medium">That&apos;s not the Scout.</div>
+          <div className="font-medium">{t("form.scout.mismatchTitle")}</div>
           <div className="text-xs text-amber-100/80 mt-0.5">
-            Only the starter Skirmisher gives us a reliable
-            account-birth date. Open her profile and try again.
+            {t("form.scout.mismatchHint")}
           </div>
         </div>
       </div>
@@ -1636,7 +1637,7 @@ function ScoutVerificationStatus(props: {
     return (
       <div className="flex items-center gap-2 mt-4 text-xs text-muted">
         <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
-        Verifying commander…
+        {t("form.scout.verifying")}
       </div>
     );
   }
@@ -1660,6 +1661,7 @@ function Field(props: {
   /** When true, shows a small ✨ "extracted" badge on the label. */
   extracted?: boolean;
 }) {
+  const t = useT();
   return (
     <label className="block">
       <span className="flex items-center gap-1.5 text-xs uppercase tracking-wider text-muted mb-1.5">
@@ -1667,11 +1669,11 @@ function Field(props: {
         {props.required && <span className="text-accent">*</span>}
         {props.extracted && (
           <span
-            title="Auto-filled from OCR — edit to override"
+            title={t("form.ocr.autoTitle")}
             className="inline-flex items-center gap-1 text-[10px] tracking-normal lowercase text-accent"
           >
             <Sparkles className="h-3 w-3" />
-            extracted
+            {t("form.ocr.extracted")}
           </span>
         )}
       </span>
@@ -1698,6 +1700,7 @@ function DropZone(props: {
   onFiles: (fs: FileList | File[]) => void;
   remaining: number;
 }) {
+  const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
 
@@ -1729,19 +1732,19 @@ function DropZone(props: {
     >
       <ImageIcon className="mx-auto h-6 w-6 text-muted" />
       <p className="mt-2 text-sm text-foreground">
-        Drag images here or{" "}
+        {t("form.dropzone.drag")}{" "}
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
           className="text-accent hover:text-accent-bright underline-offset-4 hover:underline"
         >
-          browse
+          {t("form.dropzone.browse")}
         </button>
       </p>
       <p className="text-xs text-muted mt-1">
         {props.remaining > 0
-          ? `${props.remaining} slots left · auto-compressed before upload`
-          : "Upload limit reached"}
+          ? t("form.dropzone.slotsLeft", { n: props.remaining })
+          : t("form.dropzone.limit")}
       </p>
       <input
         ref={inputRef}
@@ -1760,6 +1763,7 @@ function Gallery(props: {
   onRemove: (id: string) => void;
   onPreview: (url: string) => void;
 }) {
+  const t = useT();
   if (props.files.length === 0) return null;
   return (
     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 mt-4">
@@ -1778,12 +1782,14 @@ function Gallery(props: {
             onClick={() => props.onPreview(f.url ?? f.preview)}
             disabled={f.status === "error"}
             className="absolute inset-0 w-full h-full focus:outline-none focus:ring-2 focus:ring-accent"
-            aria-label={`Preview ${f.label ?? "screenshot"}`}
+            aria-label={t("form.gallery.previewLabel", {
+              label: f.label ?? t("form.gallery.previewFallback"),
+            })}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={f.preview}
-              alt={f.label ?? "screenshot"}
+              alt={f.label ?? t("form.gallery.previewFallback")}
               className="w-full h-full object-cover"
             />
           </button>
@@ -1795,7 +1801,7 @@ function Gallery(props: {
           {f.status === "ready" && f.ocrStatus === "running" && (
             <div
               className="absolute bottom-1 left-1 inline-flex items-center gap-1 px-1.5 py-0.5 bg-background-deep/85 text-[9px] uppercase tracking-wider text-accent"
-              title="OCR running"
+              title={t("form.gallery.ocrTitle")}
             >
               <Sparkles className="h-2.5 w-2.5 animate-pulse" />
               OCR
@@ -1804,31 +1810,31 @@ function Gallery(props: {
           {f.scoutResult === "match" && (
             <div
               className="absolute bottom-1 left-1 inline-flex items-center gap-1 px-1.5 py-0.5 bg-emerald-600/85 text-[9px] uppercase tracking-wider text-white"
-              title="Verified Scout commander"
+              title={t("form.gallery.scoutMatchTitle")}
             >
               <ShieldCheck className="h-2.5 w-2.5" />
-              Scout
+              {t("form.gallery.scoutMatch")}
             </div>
           )}
           {f.scoutResult === "mismatch" && (
             <div
               className="absolute bottom-1 left-1 inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-600/85 text-[9px] uppercase tracking-wider text-white"
-              title="Not the Scout commander — re-upload"
+              title={t("form.gallery.scoutMismatchTitle")}
             >
               <ShieldAlert className="h-2.5 w-2.5" />
-              Wrong
+              {t("form.gallery.scoutMismatch")}
             </div>
           )}
           {f.status === "error" && (
             <div className="absolute inset-0 flex items-center justify-center bg-red-900/60 text-xs text-white p-2 text-center">
-              {f.error ?? "Upload failed"}
+              {f.error ?? t("form.gallery.uploadFailed")}
             </div>
           )}
           <button
             type="button"
             onClick={() => props.onRemove(f.id)}
             className="absolute top-1 right-1 p-1 bg-background-deep/80 text-foreground opacity-0 group-hover:opacity-100 transition"
-            aria-label="Remove"
+            aria-label={t("form.gallery.removeLabel")}
           >
             <Trash2 className="h-3 w-3" />
           </button>

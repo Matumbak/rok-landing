@@ -1,3 +1,5 @@
+"use client";
+
 import { AnimatedSection } from "@/components/AnimatedSection";
 import {
   Card,
@@ -8,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import type { ApiKingdomStat, ApiRequirement } from "@/lib/api";
 import { resolveIcon } from "@/lib/icons";
+import { useT } from "@/lib/i18n";
 
 type Props = {
   stats?: ApiKingdomStat[];
@@ -15,15 +18,16 @@ type Props = {
 };
 
 export function KingdomInfo({ stats = [], requirements = [] }: Props) {
+  const t = useT();
   return (
     <AnimatedSection className="relative py-24 md:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         {stats.length > 0 && (
           <>
             <SectionHeading
-              eyebrow="Intel Brief"
-              title="Kingdom Stats"
-              subtitle="Hard numbers. No ceremony."
+              eyebrow={t("kingdomInfo.statsEyebrow")}
+              title={t("kingdomInfo.statsTitle")}
+              subtitle={t("kingdomInfo.statsSubtitle")}
             />
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
@@ -53,9 +57,9 @@ export function KingdomInfo({ stats = [], requirements = [] }: Props) {
         {requirements.length > 0 && (
           <div className={stats.length > 0 ? "mt-20" : ""}>
             <SectionHeading
-              eyebrow="Recruitment"
-              title="Migration Requirements"
-              subtitle="If you meet these, the gates are open."
+              eyebrow={t("kingdomInfo.requirementsEyebrow")}
+              title={t("kingdomInfo.requirementsTitle")}
+              subtitle={t("kingdomInfo.requirementsSubtitle")}
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">

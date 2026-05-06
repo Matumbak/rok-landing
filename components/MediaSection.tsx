@@ -1,16 +1,20 @@
+"use client";
+
 import { AnimatedSection } from "@/components/AnimatedSection";
 import type { ApiMediaItem } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 
 type Props = { items?: ApiMediaItem[] };
 
 export function MediaSection({ items = [] }: Props) {
+  const t = useT();
   return (
     <AnimatedSection className="relative pt-10 pb-20 md:pt-12 md:pb-28">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         {items.length === 0 ? (
           <div className="border border-border-bronze/60 bg-card/60 px-6 py-12 text-center text-muted">
             <p className="font-display tracking-[0.3em] uppercase text-sm">
-              No media yet — check back soon.
+              {t("media.empty")}
             </p>
           </div>
         ) : (
@@ -37,7 +41,7 @@ export function MediaSection({ items = [] }: Props) {
                     {item.title}
                   </h3>
                   <span className="mt-2 inline-block text-xs uppercase tracking-[0.3em] text-muted">
-                    Watch on YouTube
+                    {t("media.watchYoutube")}
                   </span>
                 </div>
               </a>

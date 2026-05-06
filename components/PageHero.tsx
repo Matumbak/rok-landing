@@ -1,13 +1,45 @@
-import { cn } from "@/lib/utils";
+"use client";
 
+import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
+
+/**
+ * Two ways to use this component:
+ *
+ *   1. With explicit strings — pass `eyebrow`, `title`, `description`.
+ *      Useful one-off content that doesn't live in the i18n dict.
+ *
+ *   2. With a translation namespace key — pass `tKey="pages.migration"`
+ *      and the component looks up `pages.migration.eyebrow / .title /
+ *      .description` from the active locale automatically. This is the
+ *      common pattern; server-rendered pages use it so they don't have
+ *      to become client components themselves.
+ *
+ *  If both are passed, explicit strings win.
+ */
 type Props = {
-  eyebrow: string;
-  title: string;
+  tKey?: string;
+  eyebrow?: string;
+  title?: string;
   description?: string;
   className?: string;
 };
 
-export function PageHero({ eyebrow, title, description, className }: Props) {
+export function PageHero({
+  tKey,
+  eyebrow,
+  title,
+  description,
+  className,
+}: Props) {
+  const t = useT();
+  const resolved = {
+    eyebrow: eyebrow ?? (tKey ? t(`${tKey}.eyebrow`) : ""),
+    title: title ?? (tKey ? t(`${tKey}.title`) : ""),
+    description:
+      description ?? (tKey ? t(`${tKey}.description`) : undefined),
+  };
+
   return (
     <section
       className={cn(
@@ -28,15 +60,15 @@ export function PageHero({ eyebrow, title, description, className }: Props) {
         <div className="flex items-center gap-3 mb-5">
           <span className="h-px w-12 bg-accent" />
           <span className="font-display tracking-[0.5em] text-xs text-accent uppercase">
-            {eyebrow}
+            {resolved.eyebrow}
           </span>
         </div>
         <h1 className="font-display text-4xl md:text-6xl lg:text-7xl uppercase leading-[1] tracking-[0.04em] engraved">
-          {title}
+          {resolved.title}
         </h1>
-        {description && (
+        {resolved.description && (
           <p className="mt-6 max-w-2xl text-base md:text-lg text-muted leading-relaxed">
-            {description}
+            {resolved.description}
           </p>
         )}
       </div>

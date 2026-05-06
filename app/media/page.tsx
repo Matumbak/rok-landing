@@ -15,11 +15,7 @@ export default async function MediaPage() {
 
   return (
     <>
-      <PageHero
-        eyebrow="Field Reports"
-        title="Media"
-        description="Watch the Horde in motion — KvK pushes, Ark coordination, migration walkthroughs from the 4028 frontline."
-      />
+      <PageHero tKey="pages.media" />
       <MediaSection items={items} />
     </>
   );

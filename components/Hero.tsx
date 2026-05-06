@@ -6,8 +6,10 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KINGDOM_ID } from "@/lib/data";
+import { useT } from "@/lib/i18n";
 
 export function Hero() {
+  const t = useT();
   return (
     <section className="relative min-h-[100svh] flex items-end md:items-center overflow-hidden">
       {/* full-bleed map background */}
@@ -64,7 +66,7 @@ export function Hero() {
           >
             <span className="h-px w-12 bg-accent" />
             <span className="font-display tracking-[0.5em] text-xs text-accent uppercase">
-              Kingdom {KINGDOM_ID}
+              {t("hero.eyebrow", { id: KINGDOM_ID })}
             </span>
           </motion.div>
 
@@ -74,7 +76,7 @@ export function Hero() {
             transition={{ duration: 0.8, ease: "easeOut", delay: 0.15 }}
             className="font-display text-2xl md:text-4xl tracking-[0.15em] uppercase leading-tight engraved"
           >
-            Discipline &amp; Power
+            {t("hero.title")}
           </motion.p>
 
           <motion.p
@@ -83,12 +85,25 @@ export function Hero() {
             transition={{ duration: 0.8, ease: "easeOut", delay: 0.3 }}
             className="mt-4 max-w-xl text-base md:text-lg text-foreground/90 leading-relaxed [text-shadow:0_1px_8px_rgba(6,10,13,0.85)]"
           >
-            The Bastion of{" "}
-            <span className="text-accent-bright font-medium">
-              WarDaddyChadski
-            </span>
-            . A federation forged for KvK, drilled for the Pass, ready for the
-            Ark.
+            {/* Split on the {{leader}} placeholder so we can wrap the
+                name in an accent-styled span without parsing translated
+                text. Keeps the dict free of HTML. */}
+            {(() => {
+              const parts = t("hero.description").split("{{leader}}");
+              return parts.flatMap((part, i) =>
+                i < parts.length - 1
+                  ? [
+                      part,
+                      <span
+                        key={`leader-${i}`}
+                        className="text-accent-bright font-medium"
+                      >
+                        WarDaddyChadski
+                      </span>,
+                    ]
+                  : [part],
+              );
+            })()}
           </motion.p>
 
           <motion.div
@@ -99,13 +114,13 @@ export function Hero() {
           >
             <Link href="/migration">
               <Button size="lg" className="pulse-glow">
-                Join the Horde
+                {t("hero.cta.join")}
                 <ArrowRight className="h-5 w-5" />
               </Button>
             </Link>
             <Link href="/dkp">
               <Button size="lg" variant="outline">
-                View Standings
+                {t("hero.cta.standings")}
               </Button>
             </Link>
           </motion.div>
