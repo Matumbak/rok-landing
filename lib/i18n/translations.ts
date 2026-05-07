@@ -215,6 +215,17 @@ const en: TranslationTree = {
       submitting: "Submitting…",
       submit: "Submit application",
     },
+    errors: {
+      cooldown:
+        "An application with this Governor ID was submitted {{daysAgo}} day(s) ago. You can re-apply in {{daysLeft}} day(s) — the old draft will be replaced.",
+      alreadyApproved:
+        "This Governor ID is already approved. Reach out to an officer in Discord if something needs to change.",
+      invalidGovernorId: "Governor ID must be 1–9 digits, no leading zeros.",
+      invalidGovernorIdField: "1–9 digits",
+      pickSpendingTier: "Pick a spending tier so we can calibrate your file.",
+      uploadsBusy: "Wait for all uploads to finish before submitting.",
+      submitFailed: "Couldn't submit. Try again or open Discord.",
+    },
     lightbox: {
       close: "Close preview",
       open: "Open",
@@ -465,6 +476,17 @@ const ru: TranslationTree = {
       draftSaved: "· черновик сохранён",
       submitting: "Отправляем…",
       submit: "Отправить заявку",
+    },
+    errors: {
+      cooldown:
+        "Заявка с этим Governor ID уже была подана {{daysAgo}} дн. назад. Повторно — через {{daysLeft}} дн., старая будет заменена.",
+      alreadyApproved:
+        "С этим Governor ID уже одобренная заявка. Если нужно что-то поменять — напиши офицеру в Discord.",
+      invalidGovernorId: "Governor ID — число из 1–9 цифр, без ведущих нулей.",
+      invalidGovernorIdField: "1–9 цифр",
+      pickSpendingTier: "Выбери уровень доната — без него мы не калибруем профиль.",
+      uploadsBusy: "Подожди пока все скриншоты догрузятся.",
+      submitFailed: "Не получилось отправить. Попробуй ещё раз или напиши в Discord.",
     },
     lightbox: {
       close: "Закрыть",

@@ -32,6 +32,7 @@ import {
   DkpLookupRow,
   lookupDkpRow,
   MigrationScreenshot,
+  MigrationSubmitError,
   SpendingTier,
   submitMigrationApplication,
   uploadScreenshot,
@@ -56,6 +57,13 @@ const SPENDING_TIER_OPTIONS: {
 
 const DRAFT_KEY = "huns-migration-apply-draft-v1";
 const MAX_FILES = 30;
+
+/** RoK Governor IDs are sequential — current ceiling is 9 digits and
+ *  growing slowly, so 1-9 covers everything from a year-1 founding
+ *  account (id=1) to today's newest (~218M, 9 digits). Mirror of the
+ *  zod regex on rok-api/lib/migration-application.ts so client + server
+ *  agree on what's submittable. */
+const GOVERNOR_ID_RE = /^[1-9]\d{0,8}$/;
 
 /** Subset of OCR-fillable fields whose value is a raw integer that we
  *  want to display in human form ("77 676 008" / "2B") rather than
@@ -329,6 +337,10 @@ export function MigrationApplyForm() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState<string | null>(null);
+  /** Tracks whether the Governor ID field has been blurred at least
+   *  once. We only flag invalid format AFTER first blur so the user
+   *  isn't told they're wrong while still typing the first digit. */
+  const [governorIdTouched, setGovernorIdTouched] = useState(false);
   /** URL of the image currently shown in the full-screen lightbox, or
    *  null when closed. The form lifts this state so any Gallery can
    *  trigger preview without each owning its own modal. */
@@ -759,6 +771,14 @@ export function MigrationApplyForm() {
       e.preventDefault();
       setSubmitError(null);
 
+      // Governor ID format check — same regex as the server. Catching
+      // this client-side spares the round-trip and gives the user an
+      // inline error before they wait for a 400.
+      if (!GOVERNOR_ID_RE.test(state.governorId.trim())) {
+        setSubmitError(t("form.errors.invalidGovernorId"));
+        return;
+      }
+
       const ready = files.filter((f) => f.status === "ready");
       if (ready.length < 3) {
         setSubmitError(
@@ -767,12 +787,12 @@ export function MigrationApplyForm() {
         return;
       }
       if (!state.spendingTier) {
-        setSubmitError("Pick a spending tier so we can calibrate your file.");
+        setSubmitError(t("form.errors.pickSpendingTier"));
         return;
       }
       const stillUploading = files.some((f) => f.status === "uploading");
       if (stillUploading) {
-        setSubmitError("Wait for all uploads to finish before submitting.");
+        setSubmitError(t("form.errors.uploadsBusy"));
         return;
       }
 
@@ -859,12 +879,36 @@ export function MigrationApplyForm() {
           localStorage.removeItem(`${DRAFT_KEY}-autofill`);
         }
       } catch (err) {
-        setSubmitError((err as Error).message ?? "submit_failed");
+        // Translate structured server errors into i18n strings. Anything
+        // unrecognised (network failure, 500) falls through to a generic
+        // "try again" message rather than leaking an opaque code.
+        if (err instanceof MigrationSubmitError) {
+          if (err.code === "cooldown_active") {
+            setSubmitError(
+              t("form.errors.cooldown", {
+                daysAgo: Number(err.meta.daysAgo ?? 0),
+                daysLeft: Number(err.meta.daysLeft ?? 1),
+              }),
+            );
+          } else if (err.code === "already_approved") {
+            setSubmitError(t("form.errors.alreadyApproved"));
+          } else if (err.code === "validation_failed") {
+            // The only field with a server-side regex right now is
+            // governorId, so a 400 here almost certainly means the
+            // applicant typed something the client check let through
+            // (shouldn't happen, but better than a cryptic message).
+            setSubmitError(t("form.errors.invalidGovernorId"));
+          } else {
+            setSubmitError(t("form.errors.submitFailed"));
+          }
+        } else {
+          setSubmitError(t("form.errors.submitFailed"));
+        }
       } finally {
         setSubmitting(false);
       }
     },
-    [files, state],
+    [files, state, prevKvkPosition, detectedSeed, autofillSnapshot, t],
   );
 
   if (submitted) {
@@ -925,8 +969,15 @@ export function MigrationApplyForm() {
             required
             value={state.governorId}
             onChange={(v) => update("governorId", v)}
+            onBlur={() => setGovernorIdTouched(true)}
             placeholder={t("form.placeholders.governorId")}
             extracted={extracted.has("governorId")}
+            invalid={
+              governorIdTouched &&
+              state.governorId.length > 0 &&
+              !GOVERNOR_ID_RE.test(state.governorId.trim())
+            }
+            errorHint={t("form.errors.invalidGovernorIdField")}
           />
           <Field
             label={t("form.fields.nickname")}
@@ -1661,10 +1712,20 @@ function Field(props: {
   label: string;
   value: string;
   onChange: (v: string) => void;
+  onBlur?: () => void;
   placeholder?: string;
   required?: boolean;
   /** When true, shows a small ✨ "extracted" badge on the label. */
   extracted?: boolean;
+  /** Render the input with a red border + show an inline error hint
+   *  next to the label. Used by the Governor ID field for live-format
+   *  validation; the parent owns the "should I show this?" logic
+   *  (typically only after first blur, to avoid yelling on every
+   *  keystroke). */
+  invalid?: boolean;
+  /** Short text shown next to the label when `invalid`. Free-form,
+   *  the parent passes a translated string (e.g. "1–9 digits"). */
+  errorHint?: string;
 }) {
   const t = useT();
   return (
@@ -1681,18 +1742,27 @@ function Field(props: {
             {t("form.ocr.extracted")}
           </span>
         )}
+        {props.invalid && props.errorHint && (
+          <span className="text-[10px] tracking-normal lowercase text-red-400 ml-auto">
+            {props.errorHint}
+          </span>
+        )}
       </span>
       <input
         type="text"
         value={props.value}
         onChange={(e) => props.onChange(e.target.value)}
+        onBlur={props.onBlur}
         placeholder={props.placeholder}
         required={props.required}
+        aria-invalid={props.invalid || undefined}
         className={cn(
-          "w-full bg-background-deep/60 border px-3 py-2 text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-accent transition",
-          props.extracted
-            ? "border-accent/50 bg-accent/5"
-            : "border-border-bronze/70",
+          "w-full bg-background-deep/60 border px-3 py-2 text-sm text-foreground placeholder:text-muted focus:outline-none transition",
+          props.invalid
+            ? "border-red-500/70 focus:border-red-400 bg-red-500/5"
+            : props.extracted
+              ? "border-accent/50 bg-accent/5 focus:border-accent"
+              : "border-border-bronze/70 focus:border-accent",
         )}
       />
     </label>

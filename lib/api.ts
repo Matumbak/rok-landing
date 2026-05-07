@@ -321,6 +321,25 @@ export async function uploadScreenshot(args: {
   return res.json();
 }
 
+/**
+ * Thrown by `submitMigrationApplication` when the API returns a
+ * structured error response. Caller pattern-matches on `code` to pick
+ * the right user-facing message; `meta` carries any extra context the
+ * server attached (e.g. cooldown days) so the UI doesn't have to
+ * re-derive timings from the body.
+ */
+export class MigrationSubmitError extends Error {
+  code: string;
+  status: number;
+  meta: Record<string, unknown>;
+  constructor(code: string, status: number, meta: Record<string, unknown>) {
+    super(code);
+    this.code = code;
+    this.status = status;
+    this.meta = meta;
+  }
+}
+
 export async function submitMigrationApplication(
   body: MigrationSubmitBody,
 ): Promise<{ id: string; createdAt: string }> {
@@ -330,8 +349,14 @@ export async function submitMigrationApplication(
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error ?? `submit_failed_${res.status}`);
+    const err = (await res.json().catch(() => ({}))) as Record<
+      string,
+      unknown
+    >;
+    const code =
+      (typeof err.error === "string" ? err.error : null) ??
+      `submit_failed_${res.status}`;
+    throw new MigrationSubmitError(code, res.status, err);
   }
   return res.json();
 }
