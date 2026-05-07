@@ -17,10 +17,17 @@
   --background: #1a0d08;
   --background-deep: #0d0503;
 
-  /* Foreground: parchment cream — readable on both dark maroon and
-   * the red accent overlays without glaring like pure white. */
+  /* Foreground: parchment cream per Gemini's brief (--color-text =
+   * #F3E5AB). Reads clearly on the maroon background and warmer than
+   * the previous near-white #e8dcc8 — body copy now leans into the
+   * gold side of the palette. */
   --foreground: #f3e5ab;
-  --muted: #a8946a;
+
+  /* Muted text — labels, helper copy, footer. Pushed noticeably warmer
+   * than the previous greyish #8a7a64 so the visual change between
+   * the old Huns palette and the new Phoenix NEST one is obvious;
+   * a value too close to the old grey reads as "nothing changed". */
+  --muted: #c4a268;
 
   /* Gold — primary accent. Used for headlines, CTA borders, links. */
   --accent: #ffb800;
@@ -159,8 +166,12 @@ body {
 }
 
 /* Engraved heading — gold gradient + drop shadow for depth, mirrors
- * Gemini's brief verbatim. Background-clip + transparent text gives
- * the gradient effect; -webkit prefix keeps Safari happy. */
+ * Gemini's brief verbatim. Background-clip + transparent text fill
+ * gives the gradient effect; `filter: drop-shadow` (NOT text-shadow)
+ * is mandatory here — text-shadow draws shadow from the painted
+ * pixels, but with a transparent fill there are no painted pixels to
+ * cast from, so the shadow vanishes silently. drop-shadow operates on
+ * the rendered alpha channel and works regardless of fill transparency. */
 .engraved {
   background: linear-gradient(
     180deg,
@@ -172,10 +183,7 @@ body {
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  /* Browsers that don't honour text-shadow on background-clipped text
-   * (Firefox in some configs) fall through to the parent's color, so
-   * we keep readability. */
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.55));
 }
 
 /* .btn-royal — gold-gradient CTA with pulsing border on hover.
