@@ -29,6 +29,7 @@ import {
   type DkpQuery,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
 
 /* ── value formatting ─────────────────────────────────────────────── */
 
@@ -650,6 +651,7 @@ function MobileSortPills(props: {
 }
 
 function DkpEmptyState() {
+  const t = useT();
   return (
     <AnimatedSection className="relative py-20 md:py-28">
       <div className="mx-auto max-w-3xl px-6 lg:px-8">
@@ -664,17 +666,15 @@ function DkpEmptyState() {
               <ShieldOff className="h-7 w-7" />
             </span>
             <h3 className="font-display text-2xl md:text-3xl uppercase tracking-[0.06em] engraved mb-3">
-              DKP scan not yet available
+              {t("pages.dkp.empty.title")}
             </h3>
             <p className="text-muted text-base md:text-lg max-w-xl mx-auto leading-relaxed">
-              The first scan of the season hasn&apos;t landed yet. Standings
-              will appear here as soon as governor data is collected — typically
-              after the opening KvK pass.
+              {t("pages.dkp.empty.body")}
             </p>
             <div className="mt-8 flex items-center justify-center gap-3">
               <span className="h-px w-10 bg-accent/50" />
               <span className="font-display text-xs tracking-[0.4em] uppercase text-accent">
-                Awaiting Intel
+                {t("pages.dkp.empty.eyebrow")}
               </span>
               <span className="h-px w-10 bg-accent/50" />
             </div>

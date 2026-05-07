@@ -52,6 +52,11 @@ const en: TranslationTree = {
       title: "DKP Standings",
       description:
         "Ranked by combined kill points and rally contribution this KvK. Updated after every cycle.",
+      empty: {
+        title: "DKP scan not yet available",
+        body: "The first scan of the season hasn't landed yet. Standings will appear here as soon as governor data is collected — typically after the opening KvK pass.",
+        eyebrow: "Awaiting Intel",
+      },
     },
   },
   kingdomInfo: {
@@ -301,6 +306,11 @@ const ru: TranslationTree = {
       title: "Таблица DKP",
       description:
         "Сводный рейтинг по KP и вкладу в раллики за текущий KvK. Обновляется после каждого цикла.",
+      empty: {
+        title: "Скан DKP пока не загружен",
+        body: "Первый скан сезона ещё не залетел. Рейтинг появится здесь как только соберём данные по губернаторам — обычно после стартового KvK-пасса.",
+        eyebrow: "Ждём данные",
+      },
     },
   },
   kingdomInfo: {
