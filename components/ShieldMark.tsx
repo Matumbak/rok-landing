@@ -35,14 +35,17 @@ export function ShieldMark({
       {...rest}
     >
       <defs>
+        {/* Burnished antique gold — same tones as .engraved in
+         *  globals.css. Avoid the bright #FFB800 family; reads as
+         *  cheap costume gold against the painterly phoenix bg. */}
         <linearGradient id="shield-gold" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#FFD55F" />
-          <stop offset="50%" stopColor="#FFB800" />
-          <stop offset="100%" stopColor="#A87800" />
+          <stop offset="0%" stopColor="#d8c490" />
+          <stop offset="50%" stopColor="#b8902c" />
+          <stop offset="100%" stopColor="#6e4e1c" />
         </linearGradient>
         <linearGradient id="shield-red" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#B62525" />
-          <stop offset="100%" stopColor="#5E1010" />
+          <stop offset="0%" stopColor="#8e1b1b" />
+          <stop offset="100%" stopColor="#4a0d0d" />
         </linearGradient>
       </defs>
 
@@ -55,7 +58,7 @@ export function ShieldMark({
       />
 
       {/* Phoenix wing silhouette — soft, behind the digits */}
-      <g opacity="0.35" fill="#FFD55F">
+      <g opacity="0.3" fill="#d8c490">
         <path d="M 60 70 Q 100 50 140 70 Q 130 95 100 105 Q 70 95 60 70 Z" />
         <path d="M 50 105 Q 75 90 95 110 Q 85 130 65 130 Q 50 122 50 105 Z" />
         <path d="M 150 105 Q 125 90 105 110 Q 115 130 135 130 Q 150 122 150 105 Z" />
@@ -70,7 +73,7 @@ export function ShieldMark({
         fontWeight="800"
         fontSize="58"
         fill="url(#shield-gold)"
-        stroke="#5E1010"
+        stroke="#3a0808"
         strokeWidth="1"
         letterSpacing="2"
         style={{

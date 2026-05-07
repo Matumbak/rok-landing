@@ -5,15 +5,17 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ShieldMark } from "@/components/ShieldMark";
 import { KINGDOM_ID } from "@/lib/data";
 import { useT } from "@/lib/i18n";
 
 /**
  * Phoenix NEST hero. Full-bleed phoenix imagery as the background,
  * with a maroon/crimson tint on top to keep the brand colour story
- * intact and the foreground text readable. Layout: copy + CTA on the
- * left (mobile order: under the shield), kingdom shield on the right.
+ * intact and the foreground text readable. Single copy column —
+ * the right-side shield was competing with the phoenix artwork in
+ * the source image, so the layout drops to a single column and lets
+ * the artwork breathe. The header keeps the small kingdom shield as
+ * the brand mark.
  *
  * The text column sits on a backdrop-blurred panel per Gemini's brief
  * (`backdrop-filter: blur(10px); background: rgba(20,15,10,0.7)`) so
@@ -69,11 +71,11 @@ export function Hero() {
       <CornerHud />
 
       <div className="relative mx-auto w-full max-w-7xl px-6 lg:px-8 py-24 md:py-0">
-        <div className="grid md:grid-cols-[1.4fr_1fr] gap-10 md:gap-16 items-center">
+        <div className="max-w-2xl">
           {/* Copy column — backdrop-blur panel per Gemini brief so the
            *  headline survives over the phoenix artwork even when the
            *  artwork is busy in this part of the frame. */}
-          <div className="order-2 md:order-1 relative md:bg-[rgba(20,15,10,0.7)] md:backdrop-blur-[10px] md:border md:border-border-bronze/40 md:p-8 lg:p-10">
+          <div className="relative md:bg-[rgba(20,15,10,0.7)] md:backdrop-blur-[10px] md:border md:border-border-bronze/40 md:p-8 lg:p-10">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -129,7 +131,7 @@ export function Hero() {
               className="mt-10 flex flex-wrap gap-4"
             >
               <Link href="/migration">
-                <Button size="lg" className="btn-royal pulse-glow">
+                <Button size="lg" className="btn-royal">
                   {t("hero.cta.join")}
                   <ArrowRight className="h-5 w-5" />
                 </Button>
@@ -141,27 +143,6 @@ export function Hero() {
               </Link>
             </motion.div>
           </div>
-
-          {/* Shield panel — kingdom crest as the secondary anchor next
-           *  to the phoenix bg. Mobile renders compact above the copy;
-           *  md+ shows the full-size shield to the right. */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.92 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.9, ease: "easeOut", delay: 0.2 }}
-            className="order-1 md:order-2 flex justify-center md:justify-end"
-          >
-            <div className="relative">
-              <div
-                className="absolute inset-0 -m-8 rounded-full bg-[radial-gradient(circle,rgba(255,184,0,0.4)_0%,transparent_60%)] blur-2xl"
-                aria-hidden
-              />
-              <ShieldMark
-                kingdomId={KINGDOM_ID}
-                className="relative h-44 w-36 md:h-80 md:w-72 drop-shadow-[0_8px_32px_rgba(0,0,0,0.7)]"
-              />
-            </div>
-          </motion.div>
         </div>
       </div>
     </section>
