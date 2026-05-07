@@ -158,3 +158,27 @@ html[lang="ru"] .font-display {
     line-height: 1.15;
   }
 }
+
+/* Header nav uniformity in RU mode.
+ *
+ * Mixing Cinzel and Cormorant SC in a single line breaks rhythm:
+ * "DKP" (Latin → Cinzel) sits next to "ГЛАВНАЯ" (Cyrillic → Cormorant
+ * SC) at noticeably different cap-heights and weights, so the Latin
+ * pill looks shrunken and out of place.
+ *
+ * Force every nav item to Cormorant SC when lang=ru so the whole row
+ * shares one set of metrics. Brand "HUNS" stays Cinzel — it lives in
+ * its own column and reads as a logotype, not as a nav item.
+ *
+ * Cormorant SC at the same font-size renders slightly larger than
+ * Cinzel (taller cap-height), so trim ~7% to keep the optical weight
+ * similar to the EN render. */
+html[lang="ru"] header nav .font-display {
+  font-family: var(--font-cyrillic-display), serif;
+  font-size: 0.8125rem; /* desktop nav is text-sm (0.875rem) */
+}
+@media (max-width: 768px) {
+  html[lang="ru"] header nav .font-display {
+    font-size: 0.9375rem; /* mobile menu is text-base (1rem) */
+  }
+}

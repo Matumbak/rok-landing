@@ -115,21 +115,26 @@ export function Header() {
 
         {mobileOpen && (
           <div className="md:hidden border-t border-border py-4 flex flex-col gap-4">
-            {NAV_ITEMS.map((item) => {
-              const active = isActive(item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "font-display text-base tracking-[0.25em] uppercase transition-colors",
-                    active ? "text-accent" : "text-muted hover:text-accent",
-                  )}
-                >
-                  {t(`nav.${item.tKey}`)}
-                </Link>
-              );
-            })}
+            {/* Wrap in <nav> so the RU font override in globals.css
+             *  (`header nav .font-display`) catches mobile menu items
+             *  the same way it catches desktop nav. */}
+            <nav className="flex flex-col gap-4">
+              {NAV_ITEMS.map((item) => {
+                const active = isActive(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "font-display text-base tracking-[0.25em] uppercase transition-colors",
+                      active ? "text-accent" : "text-muted hover:text-accent",
+                    )}
+                  >
+                    {t(`nav.${item.tKey}`)}
+                  </Link>
+                );
+              })}
+            </nav>
             <div className="pt-2 flex items-center gap-3">
               <LangToggle />
               <a
