@@ -28,7 +28,7 @@ const en: TranslationTree = {
     eyebrow: "Kingdom {{id}}",
     title: "Discipline & Power",
     description:
-      "The Bastion of {{leader}}. A federation forged for KvK, drilled for the Pass, ready for the Ark.",
+      "The Bastion of {{leader}}. A federation forged for KvK and ready for the Ark.",
     cta: {
       join: "Join the Horde",
       standings: "View Standings",
@@ -43,7 +43,7 @@ const en: TranslationTree = {
       eyebrow: "Recruitment",
       title: "Join the Horde",
       description:
-        "The gates of 4028 are open to disciplined governors who pull weight in KvK, Ark, and the Pass. Read the brief, then submit your application below.",
+        "The gates of 4028 are open to disciplined governors who pull weight in KvK and on the Ark. Read the brief, then submit your application below.",
       preferChat: "Prefer to chat first?",
       openDiscord: "Open Discord",
       walkthrough: "— an officer will walk you through it.",
@@ -386,7 +386,6 @@ const ru: TranslationTree = {
       governorId: "Governor ID",
       nickname: "Ник в игре",
       currentKingdom: "Текущее королевство",
-      currentAlliance: "Текущий альянс (опц.)",
       discordHandle: "Discord",
       vipLevel: "VIP-уровень",
       power: "Мощь",

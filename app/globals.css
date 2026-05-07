@@ -24,7 +24,10 @@
   --color-border: var(--border);
   --color-border-bronze: var(--border-bronze);
   --color-card: var(--card);
-  --font-display: var(--font-cinzel);
+  /* Display cascade — Cinzel renders Latin glyphs, Forum picks up Cyrillic
+   * (Cinzel ships Latin-only). Browser does per-codepoint fallback through
+   * the stack, so EN/RU pages share one stylesheet. */
+  --font-display: var(--font-cinzel), var(--font-forum), serif;
   --font-sans: var(--font-inter);
 }
 
@@ -123,4 +126,35 @@ body {
   text-shadow:
     0 1px 0 rgba(0, 0, 0, 0.6),
     0 0 24px rgba(201, 123, 61, 0.2);
+}
+
+/* ----- Russian display tweaks ------------------------------------------
+ *
+ * Cinzel ships Latin only; Cyrillic falls through to Forum (loaded
+ * alongside in layout.tsx). Forum's letterforms are naturally wider
+ * than Cinzel's, so the same em-based tracking that reads as
+ * confident on Latin headings reads as bloated on Cyrillic — and on
+ * mobile, long uppercase words like «ДИСЦИПЛИНА И СИЛА» wrap or
+ * overflow. The `html[lang="ru"]` selector beats a Tailwind utility
+ * (specificity 0,1,2 vs 0,1,0) so it overrides without `!important`.
+ *
+ * Pure Russian-only override — EN keeps the original tracking. */
+html[lang="ru"] .font-display {
+  letter-spacing: 0.05em;
+}
+
+/* On mobile, big-display headings (hero / page hero) are the worst
+ * offenders for Cyrillic overflow since they're sized for Latin
+ * proportions. A small font-size trim keeps them on one line at 360
+ * px without breaking the visual hierarchy on tablet/desktop. */
+@media (max-width: 640px) {
+  html[lang="ru"] h1.font-display {
+    font-size: 2.25rem;
+    line-height: 1.1;
+  }
+  html[lang="ru"] h2.font-display,
+  html[lang="ru"] .font-display.text-3xl {
+    font-size: 1.5rem;
+    line-height: 1.15;
+  }
 }
