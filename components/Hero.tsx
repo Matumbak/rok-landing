@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,43 +10,58 @@ import { KINGDOM_ID } from "@/lib/data";
 import { useT } from "@/lib/i18n";
 
 /**
- * Phoenix NEST hero. Replaces the Spartan-Huns landing — single-screen
- * intro with the kingdom shield as a focal element instead of a
- * background photo. Background stack:
+ * Phoenix NEST hero. Full-bleed phoenix imagery as the background,
+ * with a maroon/crimson tint on top to keep the brand colour story
+ * intact and the foreground text readable. Layout: copy + CTA on the
+ * left (mobile order: under the shield), kingdom shield on the right.
  *
- *   1. Crimson radial bloom from the top-left (phoenix glow)
- *   2. Gold radial highlight from the upper-right
- *   3. Animated sweep across the bottom — gives motion without imagery
- *
- * No external image asset required, so the page renders fully even
- * before any kingdom photography is uploaded. When the user drops a
- * proper phoenix illustration into /public, drop it as a fixed bg in
- * place of the gradient stack.
+ * The text column sits on a backdrop-blurred panel per Gemini's brief
+ * (`backdrop-filter: blur(10px); background: rgba(20,15,10,0.7)`) so
+ * the headline survives the sometimes-busy phoenix artwork below it.
  */
 export function Hero() {
   const t = useT();
   return (
     <section className="relative min-h-[100svh] flex items-center overflow-hidden">
-      {/* Background — pure CSS so the page works without image assets */}
+      {/* Full-bleed phoenix background — separate mobile + desktop crops
+       *  so portrait phones get a different focal area than landscape
+       *  screens. Both images live in /public; sizes hint Next/Image's
+       *  responsive loader to pick the right one. */}
       <div className="absolute inset-0">
-        {/* Layered radial blooms recall the phoenix-on-shield colour
-         *  story without needing the actual artwork */}
+        <Image
+          src="/hero-bg-mobile.webp"
+          alt=""
+          fill
+          priority
+          sizes="(min-width: 768px) 0px, 100vw"
+          className="object-cover object-center md:hidden"
+        />
+        <Image
+          src="/hero-bg-desktop.webp"
+          alt=""
+          fill
+          priority
+          sizes="(min-width: 768px) 100vw, 0px"
+          className="hidden md:block object-cover object-center"
+        />
+        {/* Crimson + gold tint over the photo — keeps the Phoenix NEST
+         *  palette regardless of what's in the source image */}
         <div
-          className="absolute inset-0 bg-[radial-gradient(ellipse_at_25%_15%,rgba(142,27,27,0.65)_0%,transparent_55%)]"
+          className="absolute inset-0 bg-[radial-gradient(ellipse_at_25%_15%,rgba(142,27,27,0.45)_0%,transparent_55%)]"
           aria-hidden
         />
         <div
-          className="absolute inset-0 bg-[radial-gradient(ellipse_at_85%_30%,rgba(255,184,0,0.25)_0%,transparent_55%)]"
+          className="absolute inset-0 bg-[radial-gradient(ellipse_at_85%_30%,rgba(255,184,0,0.18)_0%,transparent_55%)]"
           aria-hidden
         />
+        {/* Bottom fade — anchors the page into the body bg below */}
         <div
-          className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-background-deep via-background/80 to-transparent"
+          className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-background-deep via-background/70 to-transparent"
           aria-hidden
         />
-        {/* Subtle vignette so corners don't pull focus away from the
-         *  shield + headline */}
+        {/* Global dim — cuts overall contrast so foreground text reads */}
         <div
-          className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_30%,_rgba(13,5,3,0.7)_100%)]"
+          className="absolute inset-0 bg-background-deep/35"
           aria-hidden
         />
       </div>
@@ -54,7 +70,10 @@ export function Hero() {
 
       <div className="relative mx-auto w-full max-w-7xl px-6 lg:px-8 py-24 md:py-0">
         <div className="grid md:grid-cols-[1.4fr_1fr] gap-10 md:gap-16 items-center">
-          <div className="order-2 md:order-1">
+          {/* Copy column — backdrop-blur panel per Gemini brief so the
+           *  headline survives over the phoenix artwork even when the
+           *  artwork is busy in this part of the frame. */}
+          <div className="order-2 md:order-1 relative md:bg-[rgba(20,15,10,0.7)] md:backdrop-blur-[10px] md:border md:border-border-bronze/40 md:p-8 lg:p-10">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -123,9 +142,9 @@ export function Hero() {
             </motion.div>
           </div>
 
-          {/* Shield panel — large kingdom crest as the visual anchor.
-           *  Hidden on the smallest screens so the headline owns the
-           *  fold; reappears at md+. */}
+          {/* Shield panel — kingdom crest as the secondary anchor next
+           *  to the phoenix bg. Mobile renders compact above the copy;
+           *  md+ shows the full-size shield to the right. */}
           <motion.div
             initial={{ opacity: 0, scale: 0.92 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -133,14 +152,13 @@ export function Hero() {
             className="order-1 md:order-2 flex justify-center md:justify-end"
           >
             <div className="relative">
-              {/* Crimson glow ring behind the shield */}
               <div
-                className="absolute inset-0 -m-8 rounded-full bg-[radial-gradient(circle,rgba(255,184,0,0.35)_0%,transparent_60%)] blur-2xl"
+                className="absolute inset-0 -m-8 rounded-full bg-[radial-gradient(circle,rgba(255,184,0,0.4)_0%,transparent_60%)] blur-2xl"
                 aria-hidden
               />
               <ShieldMark
                 kingdomId={KINGDOM_ID}
-                className="relative h-56 w-48 md:h-80 md:w-72 drop-shadow-[0_8px_32px_rgba(0,0,0,0.6)]"
+                className="relative h-44 w-36 md:h-80 md:w-72 drop-shadow-[0_8px_32px_rgba(0,0,0,0.7)]"
               />
             </div>
           </motion.div>
