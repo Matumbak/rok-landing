@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { ShieldMark } from "@/components/ShieldMark";
+import { BrandMark } from "@/components/BrandMark";
 import { DISCORD_URL, KINGDOM_ID, NAV_ITEMS } from "@/lib/data";
 import { useT, useLocale } from "@/lib/i18n";
 
@@ -54,12 +54,9 @@ export function Header() {
           <Link
             href="/"
             className="flex items-center gap-3 group"
-            aria-label={`Kingdom ${KINGDOM_ID} — home`}
+            aria-label={`Kingdom ${KINGDOM_ID} — Phoenix NEST`}
           >
-            <ShieldMark
-              kingdomId={KINGDOM_ID}
-              className="h-10 w-9 md:h-12 md:w-11 transition-transform duration-300 group-hover:scale-105 drop-shadow-[0_0_10px_rgba(255,184,0,0.35)]"
-            />
+            <BrandMark className="h-9 w-9 md:h-10 md:w-10 text-accent transition-transform duration-300 group-hover:scale-105 group-hover:text-accent-bright drop-shadow-[0_0_8px_rgba(200,160,74,0.4)]" />
             <span className="font-display text-base md:text-lg tracking-[0.3em] uppercase hidden sm:inline">
               <span className="text-accent">Phoenix</span>
               <span className="text-foreground/70"> NEST</span>
