@@ -23,16 +23,6 @@ export type ApiRequirement = {
   active: boolean;
 };
 
-export type ApiMediaItem = {
-  id: string;
-  url: string;
-  title: string;
-  thumbnail: string;
-  videoId: string;
-  order: number;
-  active: boolean;
-};
-
 export type DkpColumnType = "number" | "percent" | "string";
 
 export type DkpColumn = {
@@ -109,13 +99,6 @@ export async function fetchKingdomStats(): Promise<ApiKingdomStat[]> {
 
 export async function fetchRequirements(): Promise<ApiRequirement[]> {
   const data = await get<{ items: ApiRequirement[] }>("/api/requirements", {
-    next: { revalidate: 60 },
-  });
-  return data?.items ?? [];
-}
-
-export async function fetchMedia(): Promise<ApiMediaItem[]> {
-  const data = await get<{ items: ApiMediaItem[] }>("/api/media", {
     next: { revalidate: 60 },
   });
   return data?.items ?? [];

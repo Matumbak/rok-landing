@@ -4,7 +4,7 @@ import { PageHero } from "@/components/PageHero";
 
 export const metadata: Metadata = {
   title: "DKP Standings",
-  description: "Top performers of Kingdom 4028 ranked by DKP this season.",
+  description: "Top performers of Kingdom 3615 (Phoenix NEST) ranked by DKP this KvK.",
 };
 
 export default function DkpPage() {

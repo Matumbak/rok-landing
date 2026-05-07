@@ -8,7 +8,7 @@ import { fetchKingdomStats, fetchRequirements } from "@/lib/api";
 export const metadata: Metadata = {
   title: "Migration",
   description:
-    "Apply to join Kingdom 4028 — the Bastion of WarDaddyChadski. Submit your governor brief and screenshots; an officer reviews within 48h.",
+    "Apply to join Kingdom 3615 — Phoenix NEST. Recruiting fighters for SoC 7 and the B-seed run. Submit your governor brief; an officer reviews within 48h.",
 };
 
 export const revalidate = 60;

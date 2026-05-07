@@ -10,8 +10,12 @@ import {
   Zap,
 } from "lucide-react";
 
-export const KINGDOM_ID = "4028";
-export const KINGDOM_NAME = "HUNS";
+export const KINGDOM_ID = "3615";
+export const KINGDOM_NAME = "Phoenix NEST";
+export const ALLIANCE_TAG = "PxN";
+/** Set to the actual Phoenix NEST Discord invite when available. The
+ *  `huns` placeholder is harmless until the user updates it; nothing
+ *  in production breaks if the link 404s. */
 export const DISCORD_URL = "https://discord.gg/huns";
 
 /** `tKey` resolves under the `nav.*` translation namespace. `label` is
@@ -19,11 +23,14 @@ export const DISCORD_URL = "https://discord.gg/huns";
  *  to useT yet (none right now, but cheap to keep). */
 export type NavItem = { label: string; tKey: string; href: string };
 
+/** Navigation: Media dropped — the kingdom doesn't run a content team,
+ *  so there's nothing to surface there. The /media route is removed
+ *  alongside this change; if a future kingdom wants it, restore the
+ *  entry + recreate app/media/page.tsx. */
 export const NAV_ITEMS: NavItem[] = [
   { label: "Home", tKey: "home", href: "/" },
   { label: "DKP", tKey: "dkp", href: "/dkp" },
   { label: "Migration", tKey: "migration", href: "/migration" },
-  { label: "Media", tKey: "media", href: "/media" },
 ];
 
 export type KingdomStat = {

@@ -20,30 +20,29 @@ const en: TranslationTree = {
     home: "Home",
     dkp: "DKP",
     migration: "Migration",
-    media: "Media",
     discord: "Discord",
     toggleMenu: "Toggle menu",
   },
   hero: {
     eyebrow: "Kingdom {{id}}",
-    title: "Discipline & Power",
+    title: "Phoenix NEST",
     description:
-      "The Bastion of {{leader}}. A federation forged for KvK and ready for the Ark.",
+      "Recruiting fighters for {{focus}}. Goal: B-seed. Preparing SoC 7. Whales returning in May. Power & KP — 3B+.",
     cta: {
-      join: "Join the Horde",
+      join: "Apply for Migration",
       standings: "View Standings",
     },
   },
   footer: {
-    tagline: "{{id}} Huns · Rise of Kingdoms",
+    tagline: "Kingdom {{id}} · Phoenix NEST · Rise of Kingdoms",
     discord: "Join Discord →",
   },
   pages: {
     migration: {
       eyebrow: "Recruitment",
-      title: "Join the Horde",
+      title: "Join the NEST",
       description:
-        "The gates of 4028 are open to disciplined governors who pull weight in KvK and on the Ark. Read the brief, then submit your application below.",
+        "Phoenix NEST is recruiting active fighters for SoC 7 and the run at B-seed. Read the brief below, then submit your application — an officer reviews within 48h.",
       preferChat: "Prefer to chat first?",
       openDiscord: "Open Discord",
       walkthrough: "— an officer will walk you through it.",
@@ -52,13 +51,7 @@ const en: TranslationTree = {
       eyebrow: "Leaderboard",
       title: "DKP Standings",
       description:
-        "Ranked by combined kill points and rally contribution this season. Updated after every KvK pass.",
-    },
-    media: {
-      eyebrow: "Field Reports",
-      title: "Media",
-      description:
-        "Watch the Horde in motion — KvK pushes, Ark coordination, migration walkthroughs from the 4028 frontline.",
+        "Ranked by combined kill points and rally contribution this KvK. Updated after every cycle.",
     },
   },
   kingdomInfo: {
@@ -68,10 +61,6 @@ const en: TranslationTree = {
     requirementsEyebrow: "Recruitment",
     requirementsTitle: "Migration Requirements",
     requirementsSubtitle: "If you meet these, the gates are open.",
-  },
-  media: {
-    empty: "No media yet — check back soon.",
-    watchYoutube: "Watch on YouTube",
   },
   form: {
     received: {
@@ -280,30 +269,29 @@ const ru: TranslationTree = {
     home: "Главная",
     dkp: "DKP",
     migration: "Миграция",
-    media: "Медиа",
     discord: "Discord",
     toggleMenu: "Меню",
   },
   hero: {
     eyebrow: "Королевство {{id}}",
-    title: "Дисциплина и сила",
+    title: "Phoenix NEST",
     description:
-      "Бастион {{leader}}. Альянс, заточенный под KvK и готовый к Ковчегу.",
+      "Набираем бойцов в {{focus}}. Цель — B-сид. Готовимся к SoC 7. Киты возвращаются в мае. Мощь и KP — от 3B.",
     cta: {
-      join: "Вступить в орду",
+      join: "Подать заявку",
       standings: "Таблица DKP",
     },
   },
   footer: {
-    tagline: "{{id}} Huns · Rise of Kingdoms",
+    tagline: "Королевство {{id}} · Phoenix NEST · Rise of Kingdoms",
     discord: "Присоединиться →",
   },
   pages: {
     migration: {
       eyebrow: "Набор",
-      title: "Вступай в орду",
+      title: "Вступай в гнездо",
       description:
-        "Ворота 4028 открыты для дисциплинированных правителей, которые тащат в KvK и на Ковчеге. Прочитай требования и подай заявку ниже.",
+        "Phoenix NEST набирает активных бойцов на SoC 7 и заход в B-сид. Прочитай требования ниже и подай заявку — офицер проверит за 48 часов.",
       preferChat: "Хочешь сначала пообщаться?",
       openDiscord: "Открыть Discord",
       walkthrough: "— офицер тебя проведёт.",
@@ -312,13 +300,7 @@ const ru: TranslationTree = {
       eyebrow: "Рейтинг",
       title: "Таблица DKP",
       description:
-        "Сводный рейтинг по KP и вкладу в раллики за сезон. Обновляется после каждого KvK.",
-    },
-    media: {
-      eyebrow: "Полевые сводки",
-      title: "Медиа",
-      description:
-        "Орда в действии — пуши KvK, координация на Ковчеге, гайды по миграции от фронта 4028.",
+        "Сводный рейтинг по KP и вкладу в раллики за текущий KvK. Обновляется после каждого цикла.",
     },
   },
   kingdomInfo: {
@@ -328,10 +310,6 @@ const ru: TranslationTree = {
     requirementsEyebrow: "Набор",
     requirementsTitle: "Требования к миграции",
     requirementsSubtitle: "Подходишь — ворота открыты.",
-  },
-  media: {
-    empty: "Пока нет роликов — заглядывай позже.",
-    watchYoutube: "Смотреть на YouTube",
   },
   form: {
     received: {
