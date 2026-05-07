@@ -27,7 +27,7 @@ const en: TranslationTree = {
     eyebrow: "Kingdom {{id}}",
     title: "Phoenix NEST",
     description:
-      "Recruiting fighters for {{focus}}. Goal: B-seed. Preparing SoC 7. Whales returning in May. Power & KP — 3B+.",
+      "Born from ashes. Sharpened by fire. A kingdom built for the long burn — KvK after KvK, season after season.",
     cta: {
       join: "Apply for Migration",
       standings: "View Standings",
@@ -276,7 +276,7 @@ const ru: TranslationTree = {
     eyebrow: "Королевство {{id}}",
     title: "Phoenix NEST",
     description:
-      "Набираем бойцов в {{focus}}. Цель — B-сид. Готовимся к SoC 7. Киты возвращаются в мае. Мощь и KP — от 3B.",
+      "Рождены из пепла. Заточены огнём. Королевство для долгого горения — KvK за KvK, сезон за сезоном.",
     cta: {
       join: "Подать заявку",
       standings: "Таблица DKP",

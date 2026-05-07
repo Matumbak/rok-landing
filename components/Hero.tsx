@@ -103,25 +103,7 @@ export function Hero() {
               transition={{ duration: 0.7, ease: "easeOut", delay: 0.3 }}
               className="mt-6 max-w-xl text-base md:text-lg text-foreground/90 leading-relaxed [text-shadow:0_1px_8px_rgba(13,5,3,0.85)]"
             >
-              {/* Split on the {{focus}} placeholder so we can wrap the
-                  recruitment focus in an accent span — keeps the dict
-                  HTML-free. */}
-              {(() => {
-                const parts = t("hero.description").split("{{focus}}");
-                return parts.flatMap((part, i) =>
-                  i < parts.length - 1
-                    ? [
-                        part,
-                        <span
-                          key={`focus-${i}`}
-                          className="text-accent-bright font-semibold"
-                        >
-                          SoC 7 / B-seed
-                        </span>,
-                      ]
-                    : [part],
-                );
-              })()}
+              {t("hero.description")}
             </motion.p>
 
             <motion.div
