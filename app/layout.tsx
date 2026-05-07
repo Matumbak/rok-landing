@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Cinzel, Forum, Inter } from "next/font/google";
+import { Cinzel, Cormorant_SC, Inter } from "next/font/google";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { I18nProvider } from "@/lib/i18n";
@@ -11,17 +11,21 @@ const cinzel = Cinzel({
   subsets: ["latin"],
 });
 
-/** Cyrillic-supporting display font. Cinzel ships Latin only — without
- *  this, RU headings fall through to whatever serif the user's OS picks
- *  (Times on Win, Times New Roman on iOS), which makes the brand feel
- *  collapse. Forum is a chiseled-Roman style designed by Denis Masharov
- *  with full Cyrillic coverage and a similar engraved flavour, so the
- *  visual rhythm survives the language flip. CSS uses it as the second
- *  step in the `--font-display` cascade — Latin keeps Cinzel, Cyrillic
- *  picks up Forum at the per-glyph level. */
-const forum = Forum({
-  variable: "--font-forum",
-  weight: ["400"],
+/** Cyrillic-supporting display font for RU headings. Cinzel ships Latin
+ *  only, so without a fallback Cyrillic glyphs render in the user's
+ *  system serif (Times on Win, Times New Roman on iOS) and the brand
+ *  feel collapses.
+ *
+ *  First attempt was Forum — visually too thin/contrasted (fashion-mag
+ *  aesthetic) and didn't sit well next to the Cinzel-rendered Latin.
+ *  Cormorant SC (small caps variant of Cormorant Garamond, by Christian
+ *  Thalmann) sits closer to Cinzel: classical serif, all-caps rhythm,
+ *  uniform-ish stroke width, and full Cyrillic coverage. Browser does
+ *  per-glyph fallback through the cascade in globals.css, so EN keeps
+ *  Cinzel and RU automatically picks up Cormorant SC for Cyrillic. */
+const cormorantSc = Cormorant_SC({
+  variable: "--font-cyrillic-display",
+  weight: ["400", "500", "600", "700"],
   subsets: ["latin", "cyrillic"],
 });
 
@@ -47,7 +51,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${cinzel.variable} ${forum.variable} ${inter.variable}`}
+      className={`${cinzel.variable} ${cormorantSc.variable} ${inter.variable}`}
     >
       <body className="antialiased text-foreground flex min-h-screen flex-col">
         <I18nProvider>

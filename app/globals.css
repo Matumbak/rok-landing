@@ -24,10 +24,10 @@
   --color-border: var(--border);
   --color-border-bronze: var(--border-bronze);
   --color-card: var(--card);
-  /* Display cascade — Cinzel renders Latin glyphs, Forum picks up Cyrillic
-   * (Cinzel ships Latin-only). Browser does per-codepoint fallback through
-   * the stack, so EN/RU pages share one stylesheet. */
-  --font-display: var(--font-cinzel), var(--font-forum), serif;
+  /* Display cascade — Cinzel renders Latin glyphs, Cormorant SC picks up
+   * Cyrillic (Cinzel ships Latin-only). Browser does per-codepoint
+   * fallback through the stack, so EN/RU pages share one stylesheet. */
+  --font-display: var(--font-cinzel), var(--font-cyrillic-display), serif;
   --font-sans: var(--font-inter);
 }
 
