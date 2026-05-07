@@ -27,7 +27,7 @@ const en: TranslationTree = {
     eyebrow: "Kingdom {{id}}",
     title: "Phoenix NEST",
     description:
-      "Born from ashes. Sharpened by fire. A kingdom built for the long burn — KvK after KvK, season after season.",
+      "Born from ashes. Sharpened by fire. Every KvK — another rebirth.",
     cta: {
       join: "Apply for Migration",
       standings: "View Standings",
@@ -276,7 +276,7 @@ const ru: TranslationTree = {
     eyebrow: "Королевство {{id}}",
     title: "Phoenix NEST",
     description:
-      "Рождены из пепла. Заточены огнём. Королевство для долгого горения — KvK за KvK, сезон за сезоном.",
+      "Рождены из пепла. Закалены огнём. Каждый KvK — новое возрождение.",
     cta: {
       join: "Подать заявку",
       standings: "Таблица DKP",
