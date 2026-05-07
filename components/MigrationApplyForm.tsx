@@ -117,7 +117,12 @@ type DriftWatchedKey = (typeof DRIFT_WATCHED_KEYS)[number];
  * claimed columns to avoid double-mapping.
  *
  * KP regex casts a wide net: "Kill Points" / "killpoints" (no space,
- * common in tracker exports) / "KP" / "K.P." / "Очки убийств".
+ * common in tracker exports) / "Total KP" / "KP Score" / "K.P." /
+ * "Очки убийств" / "КП". Earlier the KP alternates were `^kp$` /
+ * `^k\.?p\.?$` — anchored, so anything but a column literally named
+ * "kp" failed to match and the form's `Last KvK · Kill points` field
+ * stayed empty. Replaced with `\bkp\b` style word-boundary match so
+ * "Total KP", "KP_T4_T5", "KP Score" etc. all land on the right key.
  */
 const DKP_COLUMN_PATTERNS: Array<[RegExp, OcrFieldKey]> = [
   // Tier-specific FIRST so they claim before generic KP can grab
@@ -135,7 +140,7 @@ const DKP_COLUMN_PATTERNS: Array<[RegExp, OcrFieldKey]> = [
   // Aggregate KP last — tier-specific patterns above already claimed
   // any "T4 Kill Points" / "T5 KP" style columns.
   [
-    /kill\s*points?|killpoints?|^kp$|^k\.?p\.?$|очки\s*убийств/iu,
+    /kill\s*points?|killpoints?|\bkp\b|\bk\.\s*p\.?|очки\s*убийств|\bкп\b/iu,
     "prevKvkKillPoints",
   ],
 ];
