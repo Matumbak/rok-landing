@@ -156,7 +156,7 @@ const en: TranslationTree = {
       prevKvkKp: "Last KvK · Kill points",
       activityHours: "Activity hours",
       timezone: "Timezone",
-      reason: "Why 4028?",
+      reason: "Why Phoenix NEST?",
       hasScrolls: "I already have migration scrolls ready",
     },
     ocr: {
@@ -411,7 +411,7 @@ const ru: TranslationTree = {
       prevKvkKp: "Прошлый KvK · KP",
       activityHours: "Часы активности",
       timezone: "Часовой пояс",
-      reason: "Почему 4028?",
+      reason: "Почему Phoenix NEST?",
       hasScrolls: "У меня уже есть свитки переноса",
     },
     ocr: {
