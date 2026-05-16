@@ -38,11 +38,12 @@ export function Hero() {
   const t = useT();
   return (
     <section className="relative min-h-[100svh] flex items-end overflow-hidden">
-      {/* Background plate. Mobile crop is portrait-tall; we shift its
-       *  object-position UP so the wreath emblem sits in the upper
-       *  third of the viewport — that pushes the dim/dark bottom band
-       *  of the painting off-screen and the inscription strip below
-       *  doesn't sit in a void of empty space. Desktop keeps centred. */}
+      {/* Background — full artwork, visible end-to-end. No scrim band
+       *  swallows the lower half of the painting (balustrade + mountains
+       *  + foreground are intentional composition; user reads them).
+       *  Readability for the inscription text comes from per-element
+       *  text-shadow + the buttons' own surfaces, not from blacking
+       *  out the canvas. */}
       <div className="absolute inset-0">
         <Image
           src="/hero-bg-mobile.webp"
@@ -50,7 +51,7 @@ export function Hero() {
           fill
           priority
           sizes="(min-width: 768px) 0px, 100vw"
-          className="object-cover object-[center_25%] md:hidden"
+          className="object-cover object-center md:hidden"
         />
         <Image
           src="/hero-bg-desktop.webp"
@@ -61,43 +62,35 @@ export function Hero() {
           className="hidden md:block object-cover object-center"
         />
 
-        {/* Subtle warm radial */}
+        {/* Soft vertical vignette — TOP fade hands the artwork off to
+         *  the always-on header backdrop; BOTTOM fade is just a 12vh
+         *  whisper of dark tail that anchors the page to the footer
+         *  below (no longer a wholesale scrim). The painting itself
+         *  stays visible throughout. */}
         <div
-          className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_-10%,rgba(204,168,78,0.10)_0%,transparent_60%)]"
+          className="absolute inset-x-0 top-0 h-[14vh] bg-gradient-to-b from-background-deep/55 to-transparent"
+          aria-hidden
+        />
+        <div
+          className="absolute inset-x-0 bottom-0 h-[14vh] bg-gradient-to-t from-background-deep via-background-deep/50 to-transparent"
           aria-hidden
         />
 
-        {/* Two-layer bottom scrim. Mobile uses a TALLER fade region
-         *  but a SHORTER solid band — the artwork is shifted up
-         *  (object-[center_25%]) so we don't need a huge solid mask
-         *  at the bottom; instead a long soft fade smoothly hands off
-         *  the lower painting into the inscription strip with no
-         *  visible void between them. Desktop keeps the original
-         *  proportions because the centred crop has more to mask. */}
+        {/* Subtle side-edges vignette — pulls focus to the painted
+         *  central column without dimming any meaningful content */}
         <div
-          className="absolute inset-x-0 bottom-0 h-[14%] md:h-[26%] bg-background-deep"
-          aria-hidden
-        />
-        <div
-          className="absolute inset-x-0 bottom-[14%] md:bottom-[26%] h-[34%] md:h-[20%] bg-gradient-to-t from-background-deep via-background-deep/85 to-transparent"
-          aria-hidden
-        />
-
-        {/* Petal-rose glow — kept in the inscription area */}
-        <div
-          className="absolute inset-x-0 bottom-0 h-[40%] md:h-[26%] bg-[radial-gradient(ellipse_at_20%_75%,rgba(196,122,138,0.12)_0%,transparent_55%)]"
+          className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_55%,_rgba(12,8,5,0.45)_100%)] pointer-events-none"
           aria-hidden
         />
       </div>
 
       <CornerHud />
 
-      {/* Inscription strip. Mobile pulls content up via mb-* (pushing
-       *  the items-end target higher) so slogan + CTAs sit ~30vh up
-       *  from the bottom edge, right under the visible artwork —
-       *  no glued-to-bottom + void-above pattern. Desktop keeps the
-       *  bottom-flush anchoring. */}
-      <div className="relative mx-auto w-full max-w-5xl px-5 sm:px-6 lg:px-8 pb-8 md:pb-14">
+      {/* Inscription block — slogan + CTAs sit over the artwork's
+       *  lower foreground (balustrade / mountains / silhouette zone),
+       *  which is already darker tonality. Text-shadow handles the
+       *  remaining contrast; the artwork itself stays visible. */}
+      <div className="relative mx-auto w-full max-w-5xl px-5 sm:px-6 lg:px-8 pb-10 md:pb-16">
         <h1 className="sr-only">{t("hero.title")}</h1>
 
         <motion.div
@@ -111,13 +104,21 @@ export function Hero() {
             className="max-w-[120px] md:max-w-[140px] mx-auto mb-5 md:mb-6"
           />
 
+          {/*
+           * Slogan readability — over the painting we need real
+           * contrast without an opaque backdrop. Layered text-shadow
+           * gives a soft halo (12px black blur + 2px edge crisp +
+           * 1px outline-sharp) which reads cleanly on both the dim
+           * foreground silhouette AND the brighter sky patches that
+           * bleed through at the edges.
+           */}
           <p
             className={[
               "font-script italic",
               "text-base sm:text-xl md:text-2xl lg:text-3xl",
-              "text-cream-100 leading-snug",
+              "text-cream-50 leading-snug",
               "max-w-2xl mx-auto px-2",
-              "[text-shadow:0_2px_12px_rgba(0,0,0,0.9),0_0_2px_rgba(0,0,0,1)]",
+              "[text-shadow:0_0_16px_rgba(0,0,0,0.95),0_2px_6px_rgba(0,0,0,1),0_0_2px_rgba(0,0,0,1)]",
             ].join(" ")}
           >
             {t("hero.description")}
@@ -131,7 +132,15 @@ export function Hero() {
               </Button>
             </Link>
             <Link href="/dkp" className="w-full sm:w-auto">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto">
+              {/* Hero outline button gets a backdrop-blur wrap so its
+               *  text stays readable over the artwork. Outline variant
+               *  on its own is transparent — fine on a dark page bg,
+               *  underconstrast over a busy painting. */}
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full sm:w-auto backdrop-blur-md bg-bronze-900/45"
+              >
                 {t("hero.cta.standings")}
               </Button>
             </Link>
