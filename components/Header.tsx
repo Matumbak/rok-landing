@@ -43,10 +43,16 @@ export function Header() {
   return (
     <header
       className={cn(
+        // Always-on backdrop. Earlier we kept the header transparent
+        // until scroll, but the new bright hero artwork (sakura,
+        // gold lettering, sunset sky) made the nav text disappear at
+        // the top of the page. A persistent translucent backdrop +
+        // soft gradient fade keeps the brand + nav readable over any
+        // bg while preserving the "barely-there chrome" look.
         "fixed top-0 inset-x-0 z-50 transition-all duration-300",
         scrolled || mobileOpen
-          ? "backdrop-blur-md bg-background/70 border-b border-border"
-          : "bg-transparent",
+          ? "backdrop-blur-md bg-background-deep/85 border-b border-border-bronze/40"
+          : "backdrop-blur-sm bg-gradient-to-b from-background-deep/85 via-background-deep/50 to-transparent",
       )}
     >
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
