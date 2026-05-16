@@ -94,9 +94,9 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         className={cn(buttonVariants({ variant, size, className }))}
         {...props}
       >
-        {/* Heraldic corner marks — 4 small nailheads at the rim
-         *  corners, only on the primary metal variant. Decoration
-         *  only; pointer-events-none so they don't steal hover. */}
+        {/* Heraldic corner ornaments — 4 nailheads at the rim
+         *  corners, primary metal variant only. Decoration only;
+         *  pointer-events-none so they don't steal hover. */}
         {isPrimary && (
           <>
             <span
@@ -117,7 +117,22 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             />
           </>
         )}
-        <span className={isPrimary ? "relative engraved" : "relative"}>
+        {/*
+         * Inner span MUST be inline-flex items-center so the text
+         * + icon align to centre vertically. Previous iteration
+         * used a plain `<span>` (default `inline`), which made
+         * baseline-aligned text drift up/down relative to the
+         * icon — visible as "text flying inside the button".
+         *
+         * `leading-none` keeps the rendered glyph box flush with
+         * the flex center, no descender-induced offset.
+         */}
+        <span
+          className={cn(
+            "relative inline-flex items-center gap-2 leading-none",
+            isPrimary && "engraved",
+          )}
+        >
           {children}
         </span>
       </button>
