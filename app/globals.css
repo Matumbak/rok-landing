@@ -222,6 +222,24 @@ body {
   filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.55));
 }
 
+/* Rose-tinted engraved variant — mirrors the "3615" numerals on the
+ * hero artwork (rose-gold gradient, not pure gold). Used for the
+ * kingdom-number callout in the hero eyebrow and any other place
+ * we want to echo the artwork's pink heraldic accents. */
+.engraved-rose {
+  background: linear-gradient(
+    180deg,
+    #f5d5c5 0%,
+    #d89ca0 45%,
+    #8a4858 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  filter: drop-shadow(1px 1px 3px rgba(0, 0, 0, 0.5));
+}
+
 /* .btn-royal — burnished-amber CTA. Earlier version used Gemini's
  * literal #FFB800 stops and read as gaudy / chrome-yellow against
  * the painterly phoenix bg. Pulled the gradient down into burnished
