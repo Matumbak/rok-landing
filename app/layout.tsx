@@ -1,9 +1,27 @@
 import type { Metadata } from "next";
-import { Cinzel, Cormorant_SC, Inter, Montserrat } from "next/font/google";
+import {
+  Cinzel,
+  Cormorant_Garamond,
+  Cormorant_SC,
+  Inter_Tight,
+  Montserrat,
+} from "next/font/google";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { I18nProvider } from "@/lib/i18n";
 import "./globals.css";
+
+/* Font stack per Design System v3 (.claude/DESIGN-SYSTEM-v3.md §4):
+ *
+ *   Display     → Cinzel              (Latin only; H1/H2/CTA/eyebrow)
+ *   Display-RU  → Cormorant SC        (per-glyph Cyrillic fallback)
+ *   Sub-display → Cormorant Garamond  (italic mottos, sparingly)
+ *   Body        → Inter Tight         (slimmer geometric, pairs well
+ *                                      with Cinzel's Roman caps)
+ *   Fallback    → Montserrat          (kept as cascade safety net for
+ *                                      anything that lived on its
+ *                                      metrics during v1/v2)
+ */
 
 const cinzel = Cinzel({
   variable: "--font-cinzel",
@@ -11,37 +29,28 @@ const cinzel = Cinzel({
   subsets: ["latin"],
 });
 
-/** Cyrillic-supporting display font for RU headings. Cinzel ships Latin
- *  only, so without a fallback Cyrillic glyphs render in the user's
- *  system serif (Times on Win, Times New Roman on iOS) and the brand
- *  feel collapses.
- *
- *  Cormorant SC (small caps variant of Cormorant Garamond, by Christian
- *  Thalmann) sits closer to Cinzel than the earlier Forum experiment:
- *  classical serif, all-caps rhythm, uniform-ish stroke width, full
- *  Cyrillic coverage. Browser does per-glyph fallback through the
- *  cascade in globals.css, so EN keeps Cinzel and RU automatically
- *  picks up Cormorant SC for Cyrillic. */
 const cormorantSc = Cormorant_SC({
   variable: "--font-cyrillic-display",
   weight: ["400", "500", "600", "700"],
   subsets: ["latin", "cyrillic"],
 });
 
-/** Body font — Montserrat per the Phoenix NEST brief. Geometric sans
- *  pairs better with Cinzel's Roman caps than Inter's neo-grotesque.
- *  Cyrillic + latin subsets so RU copy doesn't fall to a system font. */
-const montserrat = Montserrat({
-  variable: "--font-montserrat",
-  weight: ["300", "400", "500", "600", "700"],
+const cormorantGaramond = Cormorant_Garamond({
+  variable: "--font-cormorant",
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
   subsets: ["latin", "cyrillic"],
 });
 
-/** Inter kept around as a system-text fallback / safety net — referenced
- *  by `--font-sans` cascade in globals.css so any component that grew
- *  attached to Inter's metrics keeps rendering close to its old self. */
-const inter = Inter({
-  variable: "--font-inter",
+const interTight = Inter_Tight({
+  variable: "--font-inter-tight",
+  weight: ["300", "400", "500", "600"],
+  subsets: ["latin", "cyrillic"],
+});
+
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
+  weight: ["300", "400", "500", "600", "700"],
   subsets: ["latin", "cyrillic"],
 });
 
@@ -51,7 +60,7 @@ export const metadata: Metadata = {
     template: "%s · Kingdom 3615",
   },
   description:
-    "The official landing of Kingdom 3615 in Rise of Kingdoms. Phoenix NEST — recruiting fighters for SoC 7, B-seed run, 3B+ power & KP.",
+    "The official landing of Kingdom 3615 in Rise of Kingdoms. Phoenix NEST — recruiting fighters for SoC 7.",
 };
 
 export default function RootLayout({
@@ -60,7 +69,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${cinzel.variable} ${cormorantSc.variable} ${montserrat.variable} ${inter.variable}`}
+      className={`${cinzel.variable} ${cormorantSc.variable} ${cormorantGaramond.variable} ${interTight.variable} ${montserrat.variable}`}
     >
       <body className="antialiased text-foreground flex min-h-screen flex-col">
         <I18nProvider>

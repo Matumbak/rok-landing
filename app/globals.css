@@ -1,92 +1,162 @@
 @import "tailwindcss";
 
-/* ─────────────────────────────────────────────────────────────────────
- * Kingdom 3615 — Phoenix NEST palette (v2 — golden-hour kingdom)
- * ─────────────────────────────────────────────────────────────────────
- * The hero artwork pivoted from a dark phoenix-on-flames composition
- * to a sunset-lit royal panorama with cherry blossoms and forest-
- * green banners. Palette follows: warm sepia-bronze base (lighter +
- * less red than the previous maroon), brighter antique gold to match
- * the artwork's gold lettering, and two new tokens (forest + rose)
- * for the secondary colours the bg introduces.
+/* ═══════════════════════════════════════════════════════════════════════
+ * Phoenix NEST — Visual System v3 (kingdom-of-3615 / sakura-golden-hour)
+ * ═══════════════════════════════════════════════════════════════════════
  *
- * Variable NAMES preserved everywhere (--accent, --border-bronze,
- * etc.) so existing Tailwind utilities keep working — only values
- * change.
+ * Token system rebuilt from the hero artwork's actual colour story:
+ * gold-on-dark base + sakura-rose seasoning + forest-green structural
+ * + cream parchment surfaces.
+ *
+ * Spec: .claude/DESIGN-SYSTEM-v3.md
+ *
+ * Existing Tailwind utilities across the codebase (text-accent,
+ * border-border-bronze, bg-card, text-foreground, etc.) are PRESERVED
+ * as semantic aliases pointing at the new palette — no class renames,
+ * only value changes. Adding net-new tokens (gold-N, rose-N, forest-N,
+ * cream-N, bronze-N) for components that want explicit-shade access.
  */
+
 :root {
-  /* Background: warm dark sepia-bronze. Pulled away from the maroon
-   * (#1a0d08) toward neutral-warm so the artwork's golden-hour tones
-   * read as a continuation of the page colour story instead of
-   * fighting a red background. */
-  --background: #181109;
-  --background-deep: #0c0805;
+  /* ─── Bronze / surface (page base) ─────────────────────── */
+  --bronze-950: #0c0805;
+  --bronze-900: #14100a;
+  --bronze-800: #1d160e;
+  --bronze-700: #2a1f14;
+  --bronze-600: #3a2c1d;
+  --bronze-500: #5a4530;
 
-  /* Foreground: parchment cream — kept; works equally well over the
-   * sepia-bronze base. */
-  --foreground: #f3e5ab;
+  /* ─── Gold (primary brand accent) ──────────────────────── */
+  --gold-50:  #f8eed4;
+  --gold-100: #f0dcaa;
+  --gold-200: #e6c97c;
+  --gold-300: #d4b265;
+  --gold-400: #cca84e;
+  --gold-500: #b8902c;
+  --gold-600: #9a7820;
+  --gold-700: #7a5418;
+  --gold-800: #5e3f12;
+  --gold-900: #3a280c;
 
-  /* Muted text — labels, helper copy, footer. Faded gold-cream,
-   * aligned with the antique-gold accent. */
-  --muted: #a08a5e;
+  /* ─── Rose (sakura accent / highlight only) ────────────── */
+  --rose-100: #f5d5c5;
+  --rose-200: #e8b8c0;
+  --rose-300: #d89ca0;
+  --rose-400: #c47a8a;
+  --rose-500: #a86072;
+  --rose-600: #8a4858;
+  --rose-700: #5e3040;
 
-  /* Gold — primary accent. Tuned to match the gold lettering on the
-   * new hero artwork: warm antique gold with a noticeable
-   * champagne-highlight when lit. Slightly brighter than the previous
-   * burnished tone because the new bg has more luminous gold than the
-   * dark phoenix-flames version had. */
-  --accent: #cca84e;
-  --accent-bright: #e6c97c;
-  --accent-deep: #7a5418;
+  /* ─── Forest (banner green / structural) ───────────────── */
+  --forest-300: #5a7a5a;
+  --forest-400: #3d5a3d;
+  --forest-500: #2d4a2d;
+  --forest-600: #1f3520;
+  --forest-700: #18301a;
 
-  /* Crimson — secondary red accent for danger states. Kept in palette
-   * but softened further: the new artwork has no crimson at all
-   * (greens and pinks dominate), so this is purely a UI danger tint
-   * now and shouldn't bleed into ambient design. */
-  --crimson: #5a1818;
-  --crimson-deep: #2e0808;
+  /* ─── Cream (parchment / body text on dark) ────────────── */
+  --cream-50:  #fbf3e1;
+  --cream-100: #f3e5ab;
+  --cream-200: #e8d49a;
+  --cream-300: #c4a268;
+  --cream-400: #a08a5e;
 
-  /* Forest — new token, matches the green banners flanking the hero
-   * artwork. Reserve for heraldic / alliance-tag highlights and any
-   * future "passed / approved / ally" affordances. */
-  --forest: #2d4a2d;
-  --forest-deep: #18301a;
+  /* ─── Legacy semantic aliases (preserved for existing
+   *     Tailwind utilities used across the codebase) ─────── */
+  --background:        var(--bronze-900);
+  --background-deep:   var(--bronze-950);
+  --foreground:        var(--cream-100);
+  --muted:             var(--cream-400);
+  --card:              var(--bronze-800);
 
-  /* Rose — new token, matches the cherry-blossom petals + crown gems
-   * in the artwork. Soft accent for hover transitions on muted
-   * elements; subtle, not a primary action colour. */
-  --rose: #c47a8a;
+  --accent:            var(--gold-400);
+  --accent-bright:     var(--gold-200);
+  --accent-deep:       var(--gold-700);
 
-  /* Border / surface neutrals tuned to the new dark base. */
-  --border: #2a1810;
-  --border-bronze: #5a3a18; /* now reads as dark gold edge, not bronze */
-  --card: #1a0d08;
+  --crimson:           var(--rose-500);   /* legacy red token → maps to
+                                            rose-deep for danger states.
+                                            Heritage usage (Header / Footer)
+                                            renders fine. */
+  --crimson-deep:      var(--rose-700);
+
+  --forest:            var(--forest-500);
+  --forest-deep:       var(--forest-700);
+  --rose:              var(--rose-400);
+
+  --border:            var(--bronze-600);
+  --border-bronze:     var(--gold-700);   /* old name, gold edge */
+
+  --danger:            var(--rose-500);
+  --success:           var(--forest-300);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-background-deep: var(--background-deep);
-  --color-foreground: var(--foreground);
-  --color-muted: var(--muted);
-  --color-accent: var(--accent);
-  --color-accent-bright: var(--accent-bright);
-  --color-accent-deep: var(--accent-deep);
-  --color-crimson: var(--crimson);
-  --color-crimson-deep: var(--crimson-deep);
-  --color-forest: var(--forest);
-  --color-forest-deep: var(--forest-deep);
-  --color-rose: var(--rose);
-  --color-border: var(--border);
-  --color-border-bronze: var(--border-bronze);
-  --color-card: var(--card);
-  /* Display cascade — Cinzel renders Latin glyphs, Cormorant SC picks
-   * up Cyrillic (Cinzel ships Latin-only). Browser does per-codepoint
-   * fallback through the stack, so EN/RU pages share one stylesheet. */
+  /* Surface */
+  --color-background:       var(--background);
+  --color-background-deep:  var(--background-deep);
+  --color-card:             var(--card);
+  --color-bronze-950:       var(--bronze-950);
+  --color-bronze-900:       var(--bronze-900);
+  --color-bronze-800:       var(--bronze-800);
+  --color-bronze-700:       var(--bronze-700);
+  --color-bronze-600:       var(--bronze-600);
+  --color-bronze-500:       var(--bronze-500);
+
+  /* Foreground */
+  --color-foreground:       var(--foreground);
+  --color-muted:            var(--muted);
+  --color-cream-50:         var(--cream-50);
+  --color-cream-100:        var(--cream-100);
+  --color-cream-200:        var(--cream-200);
+  --color-cream-300:        var(--cream-300);
+  --color-cream-400:        var(--cream-400);
+
+  /* Gold (primary) */
+  --color-accent:           var(--accent);
+  --color-accent-bright:    var(--accent-bright);
+  --color-accent-deep:      var(--accent-deep);
+  --color-gold-50:          var(--gold-50);
+  --color-gold-100:         var(--gold-100);
+  --color-gold-200:         var(--gold-200);
+  --color-gold-300:         var(--gold-300);
+  --color-gold-400:         var(--gold-400);
+  --color-gold-500:         var(--gold-500);
+  --color-gold-600:         var(--gold-600);
+  --color-gold-700:         var(--gold-700);
+  --color-gold-800:         var(--gold-800);
+  --color-gold-900:         var(--gold-900);
+
+  /* Rose (sakura highlight) */
+  --color-rose:             var(--rose);
+  --color-rose-100:         var(--rose-100);
+  --color-rose-200:         var(--rose-200);
+  --color-rose-300:         var(--rose-300);
+  --color-rose-400:         var(--rose-400);
+  --color-rose-500:         var(--rose-500);
+  --color-rose-600:         var(--rose-600);
+  --color-rose-700:         var(--rose-700);
+
+  /* Forest (structural) */
+  --color-forest:           var(--forest);
+  --color-forest-deep:      var(--forest-deep);
+  --color-forest-300:       var(--forest-300);
+  --color-forest-400:       var(--forest-400);
+  --color-forest-500:       var(--forest-500);
+  --color-forest-600:       var(--forest-600);
+  --color-forest-700:       var(--forest-700);
+
+  /* Legacy compat */
+  --color-crimson:          var(--crimson);
+  --color-crimson-deep:     var(--crimson-deep);
+  --color-border:           var(--border);
+  --color-border-bronze:    var(--border-bronze);
+  --color-danger:           var(--danger);
+  --color-success:          var(--success);
+
+  /* Fonts */
   --font-display: var(--font-cinzel), var(--font-cyrillic-display), serif;
-  /* Body font swapped from Inter to Montserrat — geometric sans pairs
-   * better with Cinzel's Roman capitals than Inter's neo-grotesque
-   * proportions. Inter still ships if a future page wants it. */
-  --font-sans: var(--font-montserrat), var(--font-inter), system-ui, sans-serif;
+  --font-script: var(--font-cormorant), serif;
+  --font-sans: var(--font-inter-tight), var(--font-montserrat), system-ui, sans-serif;
 }
 
 * {
@@ -100,120 +170,48 @@ body {
 }
 
 body {
-  font-family: var(--font-montserrat), var(--font-inter), system-ui, sans-serif;
+  font-family: var(--font-inter-tight), var(--font-montserrat), system-ui, sans-serif;
+  /* Page bg — warm gold radial from top, soft sakura rose from
+   * bottom-left, sage shimmer from right. No solid blocks; pure
+   * atmospheric layering so non-hero pages share the artwork's
+   * colour mood without explicit imagery. */
   background-image:
-    /* Golden-hour radial from the top — was a wine-red bloom for the
-     * fiery phoenix theme; new artwork is sunset-lit so the ambient
-     * tint shifts to warm sepia-gold. */
     radial-gradient(
       ellipse at 50% -10%,
       rgba(204, 168, 78, 0.10) 0%,
       transparent 60%
     ),
-    /* Sage-green wash from the bottom-left, picking up the banner
-     * green from the artwork's edge frame — anchors non-home pages
-     * to the same colour story without explicit imagery. */
     radial-gradient(
-      ellipse at 0% 100%,
-      rgba(45, 74, 45, 0.10) 0%,
+      ellipse at 10% 100%,
+      rgba(196, 122, 138, 0.10) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 100% 30%,
+      rgba(45, 74, 45, 0.08) 0%,
       transparent 55%
     ),
-    /* Bronze shimmer top-right — bright sun corner of the artwork. */
-    radial-gradient(
-      ellipse at 100% 10%,
-      rgba(230, 201, 124, 0.06) 0%,
-      transparent 45%
-    ),
-    linear-gradient(to bottom, #181109 0%, #0c0805 100%);
+    linear-gradient(to bottom, var(--bronze-900) 0%, var(--bronze-950) 100%);
   background-attachment: fixed;
   min-height: 100vh;
 }
 
 ::selection {
-  background: var(--accent);
-  color: var(--background-deep);
+  background: var(--gold-400);
+  color: var(--bronze-950);
 }
 
-@keyframes march {
-  0% {
-    stroke-dashoffset: 200;
-    opacity: 0;
-  }
-  20% {
-    opacity: 1;
-  }
-  80% {
-    opacity: 1;
-  }
-  100% {
-    stroke-dashoffset: 0;
-    opacity: 0;
-  }
-}
-
-.march-line {
-  stroke-dasharray: 4 8;
-  animation: march 3s linear infinite;
-}
-
-@keyframes pulse-glow {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(200, 160, 74, 0.3);
-  }
-  50% {
-    box-shadow: 0 0 24px 4px rgba(200, 160, 74, 0.4);
-  }
-}
-
-.pulse-glow {
-  animation: pulse-glow 2.6s ease-in-out infinite;
-}
-
-.bg-grid {
-  background-image:
-    linear-gradient(rgba(200, 160, 74, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(200, 160, 74, 0.05) 1px, transparent 1px);
-  background-size: 56px 56px;
-}
-
-/* Stone-masonry container — small layered shadows mimic the look of
- * carved/inlaid plates seen on RoK alliance UI. Pair with a `border`
- * class to get the gold edge. */
-.stone-frame {
-  position: relative;
-  box-shadow:
-    inset 0 1px 0 rgba(200, 160, 74, 0.12),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.5),
-    0 4px 16px rgba(0, 0, 0, 0.4);
-}
-.stone-frame::before {
-  content: "";
-  position: absolute;
-  inset: 4px;
-  border: 1px solid rgba(200, 160, 74, 0.18);
-  pointer-events: none;
-}
-
-/* Engraved heading — luminous antique-gold gradient + drop shadow.
- * Background-clip + transparent fill gives the gradient effect;
- * `filter: drop-shadow` (NOT text-shadow) is mandatory here — with a
- * transparent fill text-shadow has no painted pixels to cast from
- * and disappears silently. drop-shadow operates on the rendered
- * alpha channel and works regardless of fill transparency.
- *
- * Gradient stops match the gold lettering on the new hero artwork:
- * brighter champagne highlight at the top, warm amber middle, deep
- * tobacco shadow at the bottom. The previous palette (#d8c490 →
- * #b8902c → #5e3f12) leaned darker / bronze — the new artwork's
- * "KINGDOM 3615" lettering reads more luminous, so page headings
- * shift to match. */
+/* ─── Engraved type ─────────────────────────────────────────────────
+ * Gold gradient text. Uses background-clip + transparent fill, so
+ * filter: drop-shadow (NOT text-shadow) is mandatory — with empty
+ * fill text-shadow has nothing to project from.
+ */
 .engraved {
   background: linear-gradient(
     180deg,
-    #f0dcaa 0%,
-    #c8a44c 48%,
-    #6e4818 100%
+    var(--gold-100) 0%,
+    var(--gold-400) 48%,
+    var(--gold-800) 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
@@ -222,16 +220,15 @@ body {
   filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.55));
 }
 
-/* Rose-tinted engraved variant — mirrors the "3615" numerals on the
- * hero artwork (rose-gold gradient, not pure gold). Used for the
- * kingdom-number callout in the hero eyebrow and any other place
- * we want to echo the artwork's pink heraldic accents. */
+/* Sakura variant — same technique, rose-gold stops. Mirrors the
+ * artwork's "3615" numerals. Reserve for highlight callouts only;
+ * primary headlines stay on plain .engraved gold. */
 .engraved-rose {
   background: linear-gradient(
     180deg,
-    #f5d5c5 0%,
-    #d89ca0 45%,
-    #8a4858 100%
+    var(--rose-100) 0%,
+    var(--rose-300) 45%,
+    var(--rose-600) 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
@@ -240,69 +237,18 @@ body {
   filter: drop-shadow(1px 1px 3px rgba(0, 0, 0, 0.5));
 }
 
-/* .btn-royal — burnished-amber CTA. Earlier version used Gemini's
- * literal #FFB800 stops and read as gaudy / chrome-yellow against
- * the painterly phoenix bg. Pulled the gradient down into burnished
- * tones (~30% less luminance) so the button still reads as the gold
- * primary CTA but doesn't yell. Hover state pushes a touch brighter
- * for affordance without flipping back to neon. */
-.btn-royal {
-  background: linear-gradient(
-    135deg,
-    rgba(204, 168, 78, 0.95) 0%,
-    rgba(122, 84, 24, 0.95) 100%
-  );
-  border: 1px solid rgba(230, 201, 124, 0.7);
-  color: #181109;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  transition: all 0.25s ease-out;
-  box-shadow:
-    inset 0 1px 0 rgba(240, 220, 170, 0.35),
-    0 4px 10px rgba(0, 0, 0, 0.4);
-}
-.btn-royal:hover {
-  background: linear-gradient(
-    135deg,
-    rgba(230, 201, 124, 1) 0%,
-    rgba(160, 112, 40, 1) 100%
-  );
-  border-color: rgba(240, 220, 170, 0.9);
-  box-shadow:
-    inset 0 1px 0 rgba(240, 220, 170, 0.45),
-    0 0 20px rgba(204, 168, 78, 0.4);
-  transform: translateY(-1px);
-}
-
-/* ----- Russian display tweaks ------------------------------------------
- *
- * Two structural problems specific to RU rendering:
- *
- *   1. Mixed-font headings — the per-glyph cascade renders Cyrillic
- *      in Cormorant SC but Latin in Cinzel. A heading like "ТАБЛИЦА
- *      DKP" thus splits across two fonts with different cap-heights
- *      and stroke weights, and the Latin pill looks shrunken next to
- *      the Cyrillic part. Force the WHOLE display element to
- *      Cormorant SC in RU so the rhythm holds.
- *
- *   2. Cyrillic uppercase is naturally wider per word, especially
- *      with tracking — long phrases like «СТАТИСТИКА КОРОЛЕВСТВА»,
- *      «ТРЕБОВАНИЯ К МИГРАЦИИ», «ВСТУПАЙ В ГНЕЗДО» overflow even on
- *      tablet/desktop. Trim tracking to 0.02em and pull each Tailwind
- *      display step's font-size down ~10% so Cormorant SC's taller
- *      cap-height doesn't visually bloat the heading.
- *
- * Pure RU override — EN renders unchanged. */
+/* ─── Russian display tweaks ───────────────────────────────────────
+ * Cinzel ships Latin-only; under [lang="ru"] force the WHOLE
+ * .font-display subtree into Cormorant SC so mixed-font headings
+ * like "ТАБЛИЦА DKP" don't split across two typefaces with
+ * different cap-heights. Trim tracking + per-step font-size since
+ * Cormorant SC is wider per glyph + taller cap-height than Cinzel.
+ */
 html[lang="ru"] .font-display {
   font-family: var(--font-cyrillic-display), serif;
   letter-spacing: 0.02em;
 }
 
-/* Per-Tailwind-step size trim. Cormorant SC at the same nominal size
- * renders ~10% taller in cap-height + ~15% wider per glyph than
- * Cinzel; pulling each step down ~10% returns the rendered text to
- * Cinzel's optical weight without breaking the visual hierarchy. */
 html[lang="ru"] .font-display.text-7xl { font-size: 4rem; }
 html[lang="ru"] .font-display.text-6xl { font-size: 3.4rem; }
 html[lang="ru"] .font-display.text-5xl { font-size: 2.75rem; }
@@ -310,8 +256,6 @@ html[lang="ru"] .font-display.text-4xl { font-size: 2.1rem; }
 html[lang="ru"] .font-display.text-3xl { font-size: 1.65rem; }
 html[lang="ru"] .font-display.text-2xl { font-size: 1.4rem; }
 
-/* On the smallest screens, even the trimmed sizes overflow long
- * Cyrillic phrases — drop the big display steps further. */
 @media (max-width: 640px) {
   html[lang="ru"] .font-display.text-7xl { font-size: 2.1rem; line-height: 1.1; }
   html[lang="ru"] .font-display.text-6xl { font-size: 2rem; line-height: 1.1; }
@@ -320,9 +264,6 @@ html[lang="ru"] .font-display.text-2xl { font-size: 1.4rem; }
   html[lang="ru"] .font-display.text-3xl { font-size: 1.4rem; line-height: 1.15; }
 }
 
-/* Header nav size — already covered by the global rule above for
- * font-family, but keep the explicit size + tighter tracking since
- * the nav row is dense and tracking-[0.25em] is too wide for Cyrillic. */
 html[lang="ru"] header nav .font-display {
   font-size: 0.8125rem;
   letter-spacing: 0.12em;
@@ -330,5 +271,40 @@ html[lang="ru"] header nav .font-display {
 @media (max-width: 768px) {
   html[lang="ru"] header nav .font-display {
     font-size: 0.9375rem;
+  }
+}
+
+/* ─── Heraldic motion safety ────────────────────────────────────────
+ * Per spec: metal doesn't bounce. We rely on color/border-color
+ * transitions, not translate/scale. The @keyframes below are kept
+ * for legacy callsites (.pulse-glow) that haven't been refactored,
+ * but new components shouldn't reach for them. */
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(204, 168, 78, 0.25); }
+  50%      { box-shadow: 0 0 18px 4px rgba(204, 168, 78, 0.32); }
+}
+.pulse-glow { animation: pulse-glow 2.6s ease-in-out infinite; }
+
+@keyframes march {
+  0%   { stroke-dashoffset: 200; opacity: 0; }
+  20%  { opacity: 1; }
+  80%  { opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 0; }
+}
+.march-line { stroke-dasharray: 4 8; animation: march 3s linear infinite; }
+
+/* Subtle grid texture for sectioned surfaces */
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(204, 168, 78, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(204, 168, 78, 0.05) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }
