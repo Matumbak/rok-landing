@@ -16,7 +16,7 @@ export const ALLIANCE_TAG = "PxN";
 /** Set to the actual Phoenix NEST Discord invite when available. The
  *  `huns` placeholder is harmless until the user updates it; nothing
  *  in production breaks if the link 404s. */
-export const DISCORD_URL = "https://discord.gg/huns";
+export const DISCORD_URL = "https://discord.gg/kVnVv9w9h";
 
 /** `tKey` resolves under the `nav.*` translation namespace. `label` is
  *  kept as the English fallback for places that haven't been migrated
