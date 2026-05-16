@@ -171,25 +171,35 @@ body {
 
 body {
   font-family: var(--font-inter-tight), var(--font-montserrat), system-ui, sans-serif;
-  /* Page bg — warm gold radial from top, soft sakura rose from
-   * bottom-left, sage shimmer from right. No solid blocks; pure
-   * atmospheric layering so non-hero pages share the artwork's
-   * colour mood without explicit imagery. */
+  /* Page bg — warm atmospheric layering matching the hero artwork's
+   * palette so non-hero pages (/dkp, /migration) inherit the same
+   * sunset-kingdom mood. Opacities raised from the earlier 8-10%
+   * range to 18-26% so the warmth is actually felt instead of dying
+   * against the dark base. Three radials:
+   *   1. Top gold — sunset light pouring down through the page
+   *   2. Bottom-left rose — sakura-petal memory
+   *   3. Right sage — banner-green shimmer
+   * Plus a near-center muted rose that tints the mid-page slightly. */
   background-image:
     radial-gradient(
       ellipse at 50% -10%,
-      rgba(204, 168, 78, 0.10) 0%,
+      rgba(204, 168, 78, 0.22) 0%,
       transparent 60%
     ),
     radial-gradient(
       ellipse at 10% 100%,
-      rgba(196, 122, 138, 0.10) 0%,
-      transparent 50%
+      rgba(196, 122, 138, 0.18) 0%,
+      transparent 55%
     ),
     radial-gradient(
-      ellipse at 100% 30%,
-      rgba(45, 74, 45, 0.08) 0%,
+      ellipse at 100% 35%,
+      rgba(58, 95, 58, 0.14) 0%,
       transparent 55%
+    ),
+    radial-gradient(
+      ellipse at 90% 95%,
+      rgba(168, 96, 114, 0.10) 0%,
+      transparent 50%
     ),
     linear-gradient(to bottom, var(--bronze-900) 0%, var(--bronze-950) 100%);
   background-attachment: fixed;
