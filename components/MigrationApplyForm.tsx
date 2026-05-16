@@ -37,6 +37,11 @@ import {
   submitMigrationApplication,
   uploadScreenshot,
 } from "@/lib/api";
+import {
+  CornerFrame,
+  DiamondDivider,
+  WreathEmblem,
+} from "@/components/ornaments";
 
 /** Spending bracket labels with Zoe Guides $/mo bands as the canonical
  *  reference. Players already calibrate against Zoe's tiers in community
@@ -913,16 +918,23 @@ export function MigrationApplyForm() {
 
   if (submitted) {
     return (
-      <div className="border border-accent/40 bg-card/60 backdrop-blur-sm p-8 md:p-12 text-center">
-        <CheckCircle2 className="mx-auto h-12 w-12 text-accent" />
-        <h3 className="mt-4 font-display text-3xl uppercase tracking-wider engraved">
+      <div className="relative bg-bronze-800/75 backdrop-blur-sm border border-accent/50 p-8 md:p-14 text-center">
+        <CornerFrame className="text-accent" />
+        <WreathEmblem className="mx-auto text-accent mb-5" size={72} />
+        <h3 className="font-display text-3xl uppercase tracking-[0.06em] engraved">
           {t("form.received.title")}
         </h3>
-        <p className="mt-3 text-muted">
+        <DiamondDivider
+          variant="default"
+          className="max-w-[120px] mx-auto my-5"
+        />
+        <p className="text-cream-200">
           {t("form.received.reference")}{" "}
-          <span className="text-accent font-mono">{submitted}</span>
+          <span className="text-accent font-mono tracking-wider">
+            {submitted}
+          </span>
         </p>
-        <p className="mt-2 text-sm text-muted">
+        <p className="mt-3 text-sm font-script italic text-cream-200">
           {t("form.received.followup")}
         </p>
       </div>
@@ -934,13 +946,19 @@ export function MigrationApplyForm() {
     <form
       id={formId}
       onSubmit={onSubmit}
-      className="border border-accent/40 bg-card/60 backdrop-blur-sm p-6 md:p-10 space-y-10"
+      className="relative bg-bronze-800/70 backdrop-blur-sm border border-accent/40 p-6 md:p-10 space-y-10 shadow-[0_8px_32px_rgba(0,0,0,0.45)]"
     >
-      <header>
-        <h2 className="font-display text-3xl md:text-4xl uppercase tracking-wider engraved">
+      <CornerFrame className="text-accent/60" />
+
+      <header className="text-center pb-2">
+        <h2 className="font-display text-3xl md:text-4xl uppercase tracking-[0.05em] engraved">
           {t("form.intro.title")}
         </h2>
-        <p className="mt-2 text-sm md:text-base text-muted max-w-2xl">
+        <DiamondDivider
+          variant="default"
+          className="max-w-[140px] mx-auto my-4"
+        />
+        <p className="font-script italic text-base md:text-lg text-cream-200 max-w-2xl mx-auto leading-relaxed">
           {t("form.intro.subtitle")}
         </p>
       </header>
@@ -1325,20 +1343,22 @@ export function MigrationApplyForm() {
             onChange={(e) => update("reason", e.target.value)}
             rows={3}
             placeholder={t("form.placeholders.reason")}
-            className="w-full bg-background-deep/60 border border-border-bronze/70 px-3 py-2 text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-accent transition"
+            className="w-full bg-bronze-950/80 border border-bronze-600 px-3 py-2 text-sm text-cream-100 placeholder:text-cream-400/70 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/40 focus:ring-inset shadow-[inset_0_1px_2px_rgba(0,0,0,0.5)] transition-colors duration-150"
           />
         </div>
       </Section>
 
       {submitError && (
-        <div className="flex items-start gap-2 border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-300">
+        <div className="flex items-start gap-2 border border-rose-500/50 bg-rose-700/15 p-4 text-sm text-rose-200">
           <AlertCircle className="h-5 w-5 shrink-0" />
           <span>{submitError}</span>
         </div>
       )}
 
+      <DiamondDivider variant="subtle" className="max-w-md mx-auto" />
+
       <div className="flex flex-col-reverse md:flex-row md:items-center md:justify-between gap-4">
-        <p className="text-xs text-muted flex flex-wrap items-center gap-x-3 gap-y-1">
+        <p className="text-xs text-cream-400 flex flex-wrap items-center gap-x-3 gap-y-1">
           <span>
             {t("form.submit.ready", {
               n: files.filter((f) => f.status === "ready").length,
@@ -1630,13 +1650,19 @@ function Section(props: {
   children: React.ReactNode;
 }) {
   return (
-    <section className="space-y-4">
-      <div>
-        <h3 className="font-display text-xl md:text-2xl uppercase tracking-wider text-foreground">
+    <section className="space-y-5">
+      {/* Section header — gold-accent rule on the left, engraved
+       *  title, italic Cormorant subtitle. Matches the v3 system
+       *  rhythm without going full RibbonHeader (would be too heavy
+       *  for a multi-section form). */}
+      <div className="pl-4 border-l-2 border-accent/60">
+        <h3 className="font-display text-xl md:text-2xl uppercase tracking-[0.08em] engraved leading-tight">
           {props.title}
         </h3>
         {props.subtitle && (
-          <p className="text-sm text-muted mt-1">{props.subtitle}</p>
+          <p className="text-sm md:text-base text-cream-300 mt-1.5 leading-relaxed">
+            {props.subtitle}
+          </p>
         )}
       </div>
       {props.children}
@@ -1757,12 +1783,20 @@ function Field(props: {
         required={props.required}
         aria-invalid={props.invalid || undefined}
         className={cn(
-          "w-full bg-background-deep/60 border px-3 py-2 text-sm text-foreground placeholder:text-muted focus:outline-none transition",
+          // "well" treatment per design system §7.7 — deeper bg
+          // than the form card so the field reads as inset metal
+          "w-full h-11 bg-bronze-950/80 border px-3 py-2 text-sm text-cream-100",
+          "placeholder:text-cream-400/70",
+          "transition-colors duration-150",
+          "focus:outline-none focus:ring-1 focus:ring-accent/40 focus:ring-inset",
+          // Top-inset shadow gives the "pressed-in" feel of an
+          // engraved metal well
+          "shadow-[inset_0_1px_2px_rgba(0,0,0,0.5)]",
           props.invalid
-            ? "border-red-500/70 focus:border-red-400 bg-red-500/5"
+            ? "border-rose-500/70 focus:border-rose-400 bg-rose-700/10"
             : props.extracted
-              ? "border-accent/50 bg-accent/5 focus:border-accent"
-              : "border-border-bronze/70 focus:border-accent",
+              ? "border-accent/50 bg-accent/[0.04] focus:border-accent"
+              : "border-bronze-600 focus:border-accent",
         )}
       />
     </label>
@@ -1800,23 +1834,24 @@ function DropZone(props: {
       onDragLeave={() => setDragOver(false)}
       onDrop={onDrop}
       className={cn(
-        "border border-dashed border-border-bronze/70 bg-background-deep/40 p-6 text-center transition",
-        dragOver && "border-accent bg-accent/5",
+        "relative border border-dashed border-bronze-600 bg-bronze-950/60 p-6 text-center transition-colors",
+        "shadow-[inset_0_1px_3px_rgba(0,0,0,0.4)]",
+        dragOver && "border-accent bg-accent/[0.06]",
         disabled && "opacity-40 pointer-events-none",
       )}
     >
-      <ImageIcon className="mx-auto h-6 w-6 text-muted" />
-      <p className="mt-2 text-sm text-foreground">
+      <ImageIcon className="mx-auto h-6 w-6 text-accent/70" />
+      <p className="mt-2 text-sm text-cream-200">
         {t("form.dropzone.drag")}{" "}
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="text-accent hover:text-accent-bright underline-offset-4 hover:underline"
+          className="text-accent hover:text-accent-bright underline-offset-4 hover:underline transition-colors"
         >
           {t("form.dropzone.browse")}
         </button>
       </p>
-      <p className="text-xs text-muted mt-1">
+      <p className="text-xs text-cream-400 mt-1.5">
         {props.remaining > 0
           ? t("form.dropzone.slotsLeft", { n: props.remaining })
           : t("form.dropzone.limit")}
