@@ -30,25 +30,22 @@ const buttonVariants = cva(
     variants: {
       variant: {
         primary: [
-          // Surface — dark bronze, slightly darker than page card
-          "bg-bronze-800",
-          // Gold engraved text (gradient fill via .engraved utility,
-          // but Tailwind text-* won't apply when using .engraved, so
-          // we set the gradient inline here instead — text-accent
-          // serves as a fallback for browsers that don't honour
-          // background-clip: text)
+          // Surface — polished bronze. Lighter than page card so the
+          // button reads as an actionable, lit element against the
+          // dark surroundings.
           "text-accent",
-          "[background-image:linear-gradient(180deg,var(--bronze-700),var(--bronze-800))]",
-          // Rim
-          "border border-accent/70",
-          // Top highlight (inner inset shadow — metal sheen)
-          "shadow-[inset_0_1px_0_rgba(240,220,170,0.18),0_2px_8px_rgba(0,0,0,0.45)]",
-          // Hover — rim brightens, sheen lifts
+          "[background-image:linear-gradient(180deg,#3a2c1d_0%,#2a1f14_50%,#1d160e_100%)]",
+          // Rim — slightly thicker so it carries from the artwork
+          "border-[1.5px] border-accent",
+          // Top highlight (inner inset shadow — metal sheen) +
+          // outer drop shadow to lift off the bg
+          "shadow-[inset_0_1px_0_rgba(240,220,170,0.4),inset_0_-1px_0_rgba(0,0,0,0.4),0_3px_10px_rgba(0,0,0,0.55)]",
+          // Hover — rim brightens to champagne, sheen lifts
           "hover:border-accent-bright",
-          "hover:shadow-[inset_0_1px_0_rgba(240,220,170,0.28),0_2px_12px_rgba(0,0,0,0.55)]",
-          // Active — rim dims, "pressed metal"
+          "hover:shadow-[inset_0_1px_0_rgba(240,220,170,0.55),inset_0_-1px_0_rgba(0,0,0,0.4),0_3px_14px_rgba(204,168,78,0.35)]",
+          // Active — rim dims, sheen flattens ("pressed metal")
           "active:border-accent-deep",
-          "active:shadow-[inset_0_1px_2px_rgba(0,0,0,0.5)]",
+          "active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.55)]",
         ].join(" "),
         outline: [
           "bg-transparent",
