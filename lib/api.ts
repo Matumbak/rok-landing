@@ -90,6 +90,19 @@ async function get<T>(
   }
 }
 
+/**
+ * Per-locale i18n key overrides set by admins from the Phoenix admin
+ * panel. The landing's I18nProvider fetches this once on mount and
+ * walks it before falling back to the static translations.ts dict.
+ * Empty / unreachable response = empty map, defaults stand.
+ */
+export type PageContentOverrides = Record<string, Record<string, string>>;
+
+export async function fetchPageContentOverrides(): Promise<PageContentOverrides> {
+  const res = await get<{ overrides: PageContentOverrides }>("/api/page-content");
+  return res?.overrides ?? {};
+}
+
 export async function fetchKingdomStats(): Promise<ApiKingdomStat[]> {
   const data = await get<{ items: ApiKingdomStat[] }>("/api/kingdom-stats", {
     next: { revalidate: 60 },

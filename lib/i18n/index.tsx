@@ -39,17 +39,25 @@ import {
   TRANSLATIONS,
   type TranslationTree,
 } from "@/lib/i18n/translations";
+import { fetchPageContentOverrides } from "@/lib/api";
 
 const STORAGE_KEY = "huns-locale";
+
+/** Per-locale flat map of dotted-i18n-key → admin-set override value.
+ *  Walked before the static dict in `useT()` so any admin edit takes
+ *  immediate precedence over the shipped default. */
+type OverrideMap = Record<string, Record<string, string>>;
 
 type Ctx = {
   locale: Locale;
   setLocale: (l: Locale) => void;
+  overrides: OverrideMap;
 };
 
 const I18nCtx = createContext<Ctx>({
   locale: "en",
   setLocale: () => {},
+  overrides: {},
 });
 
 export function I18nProvider({ children }: { children: ReactNode }) {
@@ -57,6 +65,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   // — switching during hydration would mismatch and React would throw.
   // The effect below upgrades to "ru" right after mount.
   const [locale, setLocaleState] = useState<Locale>("en");
+  const [overrides, setOverrides] = useState<OverrideMap>({});
 
   useEffect(() => {
     // 1. Honour explicit user choice if they've toggled before.
@@ -74,6 +83,22 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     if (nav.startsWith("ru")) setLocaleState("ru");
   }, []);
 
+  // Fetch admin-set overrides once on mount. Anything overridden in
+  // the Phoenix admin's "Content" section wins over the static
+  // translations.ts default in useT() below. Failed fetch = empty
+  // map = static defaults remain in force.
+  useEffect(() => {
+    let alive = true;
+    fetchPageContentOverrides()
+      .then((next) => {
+        if (alive) setOverrides(next);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   // Side-effect on every locale change: persist + reflect on <html lang>.
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -82,8 +107,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   }, [locale]);
 
   const value = useMemo<Ctx>(
-    () => ({ locale, setLocale: setLocaleState }),
-    [locale],
+    () => ({ locale, setLocale: setLocaleState, overrides }),
+    [locale, overrides],
   );
 
   return <I18nCtx.Provider value={value}>{children}</I18nCtx.Provider>;
@@ -113,19 +138,42 @@ function interpolate(
 }
 
 /** Hook returning a translator function bound to the current locale.
- *  Re-renders whenever the locale changes, so consumer components flip
- *  RU/EN on toggle without manual subscription. */
+ *  Re-renders whenever the locale OR the admin override map changes,
+ *  so a Save click in the admin panel reflects on the public site as
+ *  soon as the next fetch lands (a manual reload triggers it, but any
+ *  remount of I18nProvider would too).
+ *
+ *  Lookup chain per key:
+ *    1. overrides[locale][key]          — admin-set, highest priority
+ *    2. static TRANSLATIONS[locale][key]
+ *    3. overrides.en[key]               — admin-set EN as last-resort
+ *    4. static TRANSLATIONS.en[key]
+ *    5. the raw key itself (dev-only warning)
+ */
 export function useT() {
-  const { locale } = useContext(I18nCtx);
+  const { locale, overrides } = useContext(I18nCtx);
   return useCallback(
     (key: string, params?: Record<string, string | number>): string => {
+      const override = overrides[locale]?.[key];
+      if (override != null) return interpolate(override, params);
+
       const direct = lookup(TRANSLATIONS[locale], key);
       if (direct != null) return interpolate(direct, params);
+
+      const enOverride = overrides.en?.[key];
+      if (enOverride != null) {
+        if (process.env.NODE_ENV !== "production") {
+          // eslint-disable-next-line no-console
+          console.warn(`[i18n] missing ${locale} key: ${key} (using en override)`);
+        }
+        return interpolate(enOverride, params);
+      }
+
       const fallback = lookup(TRANSLATIONS.en, key);
       if (fallback != null) {
         if (process.env.NODE_ENV !== "production") {
           // eslint-disable-next-line no-console
-          console.warn(`[i18n] missing ${locale} key: ${key} (using en)`);
+          console.warn(`[i18n] missing ${locale} key: ${key} (using en default)`);
         }
         return interpolate(fallback, params);
       }
@@ -135,7 +183,7 @@ export function useT() {
       }
       return key;
     },
-    [locale],
+    [locale, overrides],
   );
 }
 
