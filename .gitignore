@@ -42,3 +42,8 @@ next-env.d.ts
 
 .idea/
 *.iml
+
+# Claude Code scratch / worktrees
+.claude/worktrees/
+.claude/settings.local.json
+.claude/launch.json
