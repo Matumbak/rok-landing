@@ -7,6 +7,7 @@ import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/BrandMark";
+import { Gem } from "@/components/ornaments";
 import { DISCORD_URL, KINGDOM_ID, NAV_ITEMS } from "@/lib/data";
 import { useT, useLocale } from "@/lib/i18n";
 
@@ -77,15 +78,19 @@ export function Header() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "relative font-display text-sm tracking-[0.25em] uppercase transition-colors",
-                    active
-                      ? "text-accent"
-                      : "text-muted hover:text-accent",
+                    "relative font-display text-sm tracking-[0.25em] uppercase transition-colors py-1",
+                    "focus-visible:outline-none focus-visible:text-accent",
+                    active ? "text-accent" : "text-muted hover:text-accent",
                   )}
                 >
                   {t(`nav.${item.tKey}`)}
                   {active && (
-                    <span className="absolute -bottom-2 left-0 right-0 h-px bg-accent" />
+                    <span
+                      aria-hidden
+                      className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center"
+                    >
+                      <Gem size={8} variant="default" />
+                    </span>
                   )}
                 </Link>
               );
@@ -176,7 +181,7 @@ function LangToggle() {
     <div
       role="group"
       aria-label={t("langSwitch.label")}
-      className="inline-flex border border-border-bronze/60 bg-background-deep/40"
+      className="inline-flex border border-accent/60 bg-bronze-900/70 backdrop-blur-sm divide-x divide-accent/30"
     >
       {(["en", "ru"] as const).map((l) => (
         <button
@@ -184,10 +189,11 @@ function LangToggle() {
           type="button"
           onClick={() => setLocale(l)}
           className={cn(
-            "px-2 py-1 text-[10px] font-display tracking-[0.2em] uppercase transition-colors",
+            "px-2.5 py-1 text-[10px] font-display tracking-[0.2em] uppercase transition-colors",
+            "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent focus-visible:ring-inset",
             locale === l
-              ? "bg-accent/15 text-accent-bright"
-              : "text-muted hover:text-foreground",
+              ? "bg-accent/20 text-accent-bright"
+              : "text-muted hover:text-foreground hover:bg-bronze-700/40",
           )}
           aria-pressed={locale === l}
         >
