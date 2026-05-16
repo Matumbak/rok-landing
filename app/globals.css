@@ -1,54 +1,61 @@
 @import "tailwindcss";
 
 /* ─────────────────────────────────────────────────────────────────────
- * Kingdom 3615 — Phoenix NEST palette
+ * Kingdom 3615 — Phoenix NEST palette (v2 — golden-hour kingdom)
  * ─────────────────────────────────────────────────────────────────────
- * Replaces the previous bronze-on-near-black scheme with deep crimson
- * + gold + parchment-cream. Variable NAMES are preserved (--accent,
- * --border-bronze, etc.) so existing Tailwind utility classes
- * (text-accent, border-border-bronze) keep working — only the values
- * change. The old name `border-bronze` reads slightly off-brand now
- * but renaming would touch ~hundreds of class references; not worth
- * it for cosmetic clarity.
+ * The hero artwork pivoted from a dark phoenix-on-flames composition
+ * to a sunset-lit royal panorama with cherry blossoms and forest-
+ * green banners. Palette follows: warm sepia-bronze base (lighter +
+ * less red than the previous maroon), brighter antique gold to match
+ * the artwork's gold lettering, and two new tokens (forest + rose)
+ * for the secondary colours the bg introduces.
+ *
+ * Variable NAMES preserved everywhere (--accent, --border-bronze,
+ * etc.) so existing Tailwind utilities keep working — only values
+ * change.
  */
 :root {
-  /* Background: deep maroon-tinted dark, not pure black, so phoenix
-   * imagery and gold accents read warm rather than clinical. */
-  --background: #1a0d08;
-  --background-deep: #0d0503;
+  /* Background: warm dark sepia-bronze. Pulled away from the maroon
+   * (#1a0d08) toward neutral-warm so the artwork's golden-hour tones
+   * read as a continuation of the page colour story instead of
+   * fighting a red background. */
+  --background: #181109;
+  --background-deep: #0c0805;
 
-  /* Foreground: parchment cream per Gemini's brief (--color-text =
-   * #F3E5AB). Reads clearly on the maroon background and warmer than
-   * the previous near-white #e8dcc8 — body copy now leans into the
-   * gold side of the palette. */
+  /* Foreground: parchment cream — kept; works equally well over the
+   * sepia-bronze base. */
   --foreground: #f3e5ab;
 
-  /* Muted text — labels, helper copy, footer. Aligned with the new
-   * burnished-gold accent so muted lines feel like a faded version
-   * of the same tone, not a separate palette. */
+  /* Muted text — labels, helper copy, footer. Faded gold-cream,
+   * aligned with the antique-gold accent. */
   --muted: #a08a5e;
 
-  /* Gold — primary accent. Used for headlines, CTA borders, links.
-   *
-   * Earlier values pulled the literal #FFB800 from Gemini's brief and
-   * they read as fluorescent / cheap on the actual phoenix artwork —
-   * the bright pure-yellow popped against the muted painterly bg in a
-   * way that felt off-brand. Swapped to burnished antique gold:
-   * desaturated, leans amber, sits closer to the gold leaf you'd see
-   * on a temple medallion than to neon Vegas signage. */
-  --accent: #c8a04a;
-  --accent-bright: #d8b870;
-  --accent-deep: #6e4e1c;
+  /* Gold — primary accent. Tuned to match the gold lettering on the
+   * new hero artwork: warm antique gold with a noticeable
+   * champagne-highlight when lit. Slightly brighter than the previous
+   * burnished tone because the new bg has more luminous gold than the
+   * dark phoenix-flames version had. */
+  --accent: #cca84e;
+  --accent-bright: #e6c97c;
+  --accent-deep: #7a5418;
 
-  /* Crimson — secondary accent for shields, danger states, alliance
-   * markings. Originally Gemini's #8E1B1B, but at full saturation it
-   * fought the burnished gold across non-home pages where there was
-   * no phoenix artwork to anchor it. Pulled both stops one step
-   * darker / less saturated so the red sits closer to dried-blood /
-   * oxidised-iron territory and reads as part of the same antique
-   * palette as the gold instead of as a competing accent. */
-  --crimson: #6e1818;
-  --crimson-deep: #3e0a0a;
+  /* Crimson — secondary red accent for danger states. Kept in palette
+   * but softened further: the new artwork has no crimson at all
+   * (greens and pinks dominate), so this is purely a UI danger tint
+   * now and shouldn't bleed into ambient design. */
+  --crimson: #5a1818;
+  --crimson-deep: #2e0808;
+
+  /* Forest — new token, matches the green banners flanking the hero
+   * artwork. Reserve for heraldic / alliance-tag highlights and any
+   * future "passed / approved / ally" affordances. */
+  --forest: #2d4a2d;
+  --forest-deep: #18301a;
+
+  /* Rose — new token, matches the cherry-blossom petals + crown gems
+   * in the artwork. Soft accent for hover transitions on muted
+   * elements; subtle, not a primary action colour. */
+  --rose: #c47a8a;
 
   /* Border / surface neutrals tuned to the new dark base. */
   --border: #2a1810;
@@ -66,6 +73,9 @@
   --color-accent-deep: var(--accent-deep);
   --color-crimson: var(--crimson);
   --color-crimson-deep: var(--crimson-deep);
+  --color-forest: var(--forest);
+  --color-forest-deep: var(--forest-deep);
+  --color-rose: var(--rose);
   --color-border: var(--border);
   --color-border-bronze: var(--border-bronze);
   --color-card: var(--card);
@@ -92,24 +102,29 @@ body {
 body {
   font-family: var(--font-montserrat), var(--font-inter), system-ui, sans-serif;
   background-image:
-    /* Warm maroon bloom from the top. Was rgba(142,27,27,0.45) which
-     * read as a saturated red haze on /dkp + /migration where no
-     * phoenix artwork sits underneath to anchor it; pulled to deeper
-     * dried-blood at lower opacity so the warmth is felt rather than
-     * announced. */
+    /* Golden-hour radial from the top — was a wine-red bloom for the
+     * fiery phoenix theme; new artwork is sunset-lit so the ambient
+     * tint shifts to warm sepia-gold. */
     radial-gradient(
       ellipse at 50% -10%,
-      rgba(94, 16, 16, 0.22) 0%,
+      rgba(204, 168, 78, 0.10) 0%,
+      transparent 60%
+    ),
+    /* Sage-green wash from the bottom-left, picking up the banner
+     * green from the artwork's edge frame — anchors non-home pages
+     * to the same colour story without explicit imagery. */
+    radial-gradient(
+      ellipse at 0% 100%,
+      rgba(45, 74, 45, 0.10) 0%,
       transparent 55%
     ),
-    /* Burnished-gold shimmer on the right side, aligned with the new
-     * --accent tone (was the old #FFB800 reference). */
+    /* Bronze shimmer top-right — bright sun corner of the artwork. */
     radial-gradient(
-      ellipse at 100% 30%,
-      rgba(200, 160, 74, 0.06) 0%,
-      transparent 50%
+      ellipse at 100% 10%,
+      rgba(230, 201, 124, 0.06) 0%,
+      transparent 45%
     ),
-    linear-gradient(to bottom, #1a0d08 0%, #0d0503 100%);
+    linear-gradient(to bottom, #181109 0%, #0c0805 100%);
   background-attachment: fixed;
   min-height: 100vh;
 }
@@ -180,23 +195,25 @@ body {
   pointer-events: none;
 }
 
-/* Engraved heading — antique-gold gradient + drop shadow for depth.
- * Background-clip + transparent text fill gives the gradient effect;
- * `filter: drop-shadow` (NOT text-shadow) is mandatory here —
- * text-shadow draws shadow from the painted pixels, but with a
- * transparent fill there are no painted pixels to cast from, so the
- * shadow vanishes silently. drop-shadow operates on the rendered
+/* Engraved heading — luminous antique-gold gradient + drop shadow.
+ * Background-clip + transparent fill gives the gradient effect;
+ * `filter: drop-shadow` (NOT text-shadow) is mandatory here — with a
+ * transparent fill text-shadow has no painted pixels to cast from
+ * and disappears silently. drop-shadow operates on the rendered
  * alpha channel and works regardless of fill transparency.
  *
- * Tones moved away from the original neon-yellow #FFB800 stops: a
- * burnished palette (champagne → amber → bronze) reads as aged gold
- * leaf instead of fluorescent display gold. */
+ * Gradient stops match the gold lettering on the new hero artwork:
+ * brighter champagne highlight at the top, warm amber middle, deep
+ * tobacco shadow at the bottom. The previous palette (#d8c490 →
+ * #b8902c → #5e3f12) leaned darker / bronze — the new artwork's
+ * "KINGDOM 3615" lettering reads more luminous, so page headings
+ * shift to match. */
 .engraved {
   background: linear-gradient(
     180deg,
-    #d8c490 0%,
-    #b8902c 50%,
-    #5e3f12 100%
+    #f0dcaa 0%,
+    #c8a44c 48%,
+    #6e4818 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
@@ -214,29 +231,29 @@ body {
 .btn-royal {
   background: linear-gradient(
     135deg,
-    rgba(184, 144, 60, 0.92) 0%,
-    rgba(110, 78, 28, 0.94) 100%
+    rgba(204, 168, 78, 0.95) 0%,
+    rgba(122, 84, 24, 0.95) 100%
   );
-  border: 1px solid rgba(200, 160, 74, 0.7);
-  color: #1a0d08;
+  border: 1px solid rgba(230, 201, 124, 0.7);
+  color: #181109;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   transition: all 0.25s ease-out;
   box-shadow:
-    inset 0 1px 0 rgba(216, 196, 144, 0.3),
-    0 4px 10px rgba(0, 0, 0, 0.35);
+    inset 0 1px 0 rgba(240, 220, 170, 0.35),
+    0 4px 10px rgba(0, 0, 0, 0.4);
 }
 .btn-royal:hover {
   background: linear-gradient(
     135deg,
-    rgba(216, 184, 112, 0.95) 0%,
-    rgba(140, 100, 36, 0.95) 100%
+    rgba(230, 201, 124, 1) 0%,
+    rgba(160, 112, 40, 1) 100%
   );
-  border-color: rgba(216, 184, 112, 0.85);
+  border-color: rgba(240, 220, 170, 0.9);
   box-shadow:
-    inset 0 1px 0 rgba(216, 196, 144, 0.4),
-    0 0 18px rgba(200, 160, 74, 0.3);
+    inset 0 1px 0 rgba(240, 220, 170, 0.45),
+    0 0 20px rgba(204, 168, 78, 0.4);
   transform: translateY(-1px);
 }
 
