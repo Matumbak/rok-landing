@@ -9,10 +9,14 @@ import {
   ChevronRight,
   Crown,
   Search,
-  ShieldOff,
 } from "lucide-react";
 import { AnimatedSection } from "@/components/AnimatedSection";
 import { Card } from "@/components/ui/card";
+import {
+  CornerFrame,
+  DiamondDivider,
+  WreathEmblem,
+} from "@/components/ornaments";
 import {
   Table,
   TableBody,
@@ -655,29 +659,31 @@ function DkpEmptyState() {
   return (
     <AnimatedSection className="relative py-20 md:py-28">
       <div className="mx-auto max-w-3xl px-6 lg:px-8">
-        <div className="relative bg-card/80 backdrop-blur-sm border border-border-bronze/70 px-8 py-14 md:py-20 text-center overflow-hidden">
-          <div className="absolute inset-0 bg-grid opacity-[0.18]" aria-hidden />
+        <div className="relative bg-bronze-800/75 backdrop-blur-sm border border-bronze-600 px-8 py-14 md:py-20 text-center overflow-hidden">
+          <CornerFrame className="text-accent/40" />
+          <div className="absolute inset-0 bg-grid opacity-[0.12]" aria-hidden />
           <div
-            className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(201,123,61,0.10),_transparent_70%)]"
+            className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(204,168,78,0.10),transparent_70%)]"
             aria-hidden
           />
           <div className="relative">
-            <span className="inline-flex h-16 w-16 items-center justify-center border border-accent/40 bg-accent/10 text-accent mb-6">
-              <ShieldOff className="h-7 w-7" />
-            </span>
+            <WreathEmblem
+              className="mx-auto text-accent mb-6"
+              size={72}
+            />
             <h3 className="font-display text-2xl md:text-3xl uppercase tracking-[0.06em] engraved mb-3">
               {t("pages.dkp.empty.title")}
             </h3>
-            <p className="text-muted text-base md:text-lg max-w-xl mx-auto leading-relaxed">
+            <p className="font-script italic text-cream-200 text-base md:text-lg max-w-xl mx-auto leading-relaxed">
               {t("pages.dkp.empty.body")}
             </p>
-            <div className="mt-8 flex items-center justify-center gap-3">
-              <span className="h-px w-10 bg-accent/50" />
-              <span className="font-display text-xs tracking-[0.4em] uppercase text-accent">
-                {t("pages.dkp.empty.eyebrow")}
-              </span>
-              <span className="h-px w-10 bg-accent/50" />
-            </div>
+            <DiamondDivider
+              variant="default"
+              className="max-w-[100px] mx-auto mt-7 mb-3"
+            />
+            <span className="font-display text-xs tracking-[0.4em] uppercase text-accent">
+              {t("pages.dkp.empty.eyebrow")}
+            </span>
           </div>
         </div>
       </div>
