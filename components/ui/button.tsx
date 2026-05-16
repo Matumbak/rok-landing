@@ -88,6 +88,34 @@ export interface ButtonProps
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, children, ...props }, ref) => {
     const isPrimary = (variant ?? "primary") === "primary";
+
+    /*
+     * .engraved sets `color: transparent` so the gold gradient
+     * shines through via background-clip:text. That's fine for
+     * text, but if we wrap text+icon together, the icon (rendered
+     * via SVG with `currentColor`) ALSO goes transparent and
+     * disappears — its invisible 20×20 box stays in flow and
+     * shoves the visible text off-centre. User saw this as text
+     * drifting horizontally inside the button.
+     *
+     * Fix: walk children, wrap STRING children in .engraved
+     * spans, pass everything else (SVG icons, etc.) through
+     * untouched. Icons retain `text-accent` colour from the
+     * button's inherited `text-*` class.
+     */
+    const renderChildren = () => {
+      if (!isPrimary) return children;
+      return React.Children.map(children, (child, i) =>
+        typeof child === "string" ? (
+          <span key={i} className="engraved leading-none">
+            {child}
+          </span>
+        ) : (
+          child
+        ),
+      );
+    };
+
     return (
       <button
         ref={ref}
@@ -117,24 +145,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             />
           </>
         )}
-        {/*
-         * Inner span MUST be inline-flex items-center so the text
-         * + icon align to centre vertically. Previous iteration
-         * used a plain `<span>` (default `inline`), which made
-         * baseline-aligned text drift up/down relative to the
-         * icon — visible as "text flying inside the button".
-         *
-         * `leading-none` keeps the rendered glyph box flush with
-         * the flex center, no descender-induced offset.
-         */}
-        <span
-          className={cn(
-            "relative inline-flex items-center gap-2 leading-none",
-            isPrimary && "engraved",
-          )}
-        >
-          {children}
-        </span>
+        {renderChildren()}
       </button>
     );
   },
