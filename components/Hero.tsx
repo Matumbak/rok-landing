@@ -38,7 +38,11 @@ export function Hero() {
   const t = useT();
   return (
     <section className="relative min-h-[100svh] flex items-end overflow-hidden">
-      {/* Background plate */}
+      {/* Background plate. Mobile crop is portrait-tall; we shift its
+       *  object-position UP so the wreath emblem sits in the upper
+       *  third of the viewport — that pushes the dim/dark bottom band
+       *  of the painting off-screen and the inscription strip below
+       *  doesn't sit in a void of empty space. Desktop keeps centred. */}
       <div className="absolute inset-0">
         <Image
           src="/hero-bg-mobile.webp"
@@ -46,7 +50,7 @@ export function Hero() {
           fill
           priority
           sizes="(min-width: 768px) 0px, 100vw"
-          className="object-cover object-center md:hidden"
+          className="object-cover object-[center_25%] md:hidden"
         />
         <Image
           src="/hero-bg-desktop.webp"
@@ -57,43 +61,43 @@ export function Hero() {
           className="hidden md:block object-cover object-center"
         />
 
-        {/* Subtle warm radial — reinforces the golden-hour mood */}
+        {/* Subtle warm radial */}
         <div
           className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_-10%,rgba(204,168,78,0.10)_0%,transparent_60%)]"
           aria-hidden
         />
 
-        {/* Bottom scrim — TWO LAYERS for a clean cut between artwork
-         *  and inscription strip. Lower layer is solid bg-deep so
-         *  the wreath emblem from the painting can't bleed into the
-         *  inscription area at the bottom; upper layer is the soft
-         *  fade that smoothly transitions back into the artwork
-         *  higher up. Earlier single-layer scrim let the artwork's
-         *  wreath emblem leak into the CTA area ("наплывание"). */}
+        {/* Two-layer bottom scrim. Mobile uses a TALLER fade region
+         *  but a SHORTER solid band — the artwork is shifted up
+         *  (object-[center_25%]) so we don't need a huge solid mask
+         *  at the bottom; instead a long soft fade smoothly hands off
+         *  the lower painting into the inscription strip with no
+         *  visible void between them. Desktop keeps the original
+         *  proportions because the centred crop has more to mask. */}
         <div
-          className="absolute inset-x-0 bottom-0 h-[28%] md:h-[26%] bg-background-deep"
+          className="absolute inset-x-0 bottom-0 h-[14%] md:h-[26%] bg-background-deep"
           aria-hidden
         />
         <div
-          className="absolute inset-x-0 bottom-[28%] md:bottom-[26%] h-[24%] md:h-[20%] bg-gradient-to-t from-background-deep via-background-deep/92 to-transparent"
+          className="absolute inset-x-0 bottom-[14%] md:bottom-[26%] h-[34%] md:h-[20%] bg-gradient-to-t from-background-deep via-background-deep/85 to-transparent"
           aria-hidden
         />
 
-        {/* Petal-rose glow from the bottom-left, sits in the
-         *  inscription area to tie the strip to the artwork pinks */}
+        {/* Petal-rose glow — kept in the inscription area */}
         <div
-          className="absolute inset-x-0 bottom-0 h-[28%] md:h-[26%] bg-[radial-gradient(ellipse_at_20%_75%,rgba(196,122,138,0.12)_0%,transparent_55%)]"
+          className="absolute inset-x-0 bottom-0 h-[40%] md:h-[26%] bg-[radial-gradient(ellipse_at_20%_75%,rgba(196,122,138,0.12)_0%,transparent_55%)]"
           aria-hidden
         />
       </div>
 
       <CornerHud />
 
-      {/* Inscription strip — slogan + CTAs in the solid scrim band
-       *  at the very bottom of the viewport. The artwork's wreath +
-       *  shield emblem now sits comfortably above the scrim's hard
-       *  edge, no overlap. */}
-      <div className="relative mx-auto w-full max-w-5xl px-6 lg:px-8 pb-10 md:pb-14">
+      {/* Inscription strip. Mobile pulls content up via mb-* (pushing
+       *  the items-end target higher) so slogan + CTAs sit ~30vh up
+       *  from the bottom edge, right under the visible artwork —
+       *  no glued-to-bottom + void-above pattern. Desktop keeps the
+       *  bottom-flush anchoring. */}
+      <div className="relative mx-auto w-full max-w-5xl px-5 sm:px-6 lg:px-8 pb-8 md:pb-14">
         <h1 className="sr-only">{t("hero.title")}</h1>
 
         <motion.div
@@ -102,27 +106,24 @@ export function Hero() {
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
           className="text-center"
         >
-          {/* Visual stop between artwork and inscription — single
-           *  diamond divider, no text. The artwork carries the
-           *  brand; we don't repeat it. */}
-          <DiamondDivider variant="default" className="max-w-[140px] mx-auto mb-6" />
+          <DiamondDivider
+            variant="default"
+            className="max-w-[120px] md:max-w-[140px] mx-auto mb-5 md:mb-6"
+          />
 
-          {/* Slogan — serif italic, royal-inscription voice.
-           *  Layered text-shadow keeps it crisp over any patch of
-           *  the painting that bleeds through the scrim. */}
           <p
             className={[
               "font-script italic",
-              "text-xl md:text-2xl lg:text-3xl",
+              "text-base sm:text-xl md:text-2xl lg:text-3xl",
               "text-cream-100 leading-snug",
-              "max-w-2xl mx-auto",
+              "max-w-2xl mx-auto px-2",
               "[text-shadow:0_2px_12px_rgba(0,0,0,0.9),0_0_2px_rgba(0,0,0,1)]",
             ].join(" ")}
           >
             {t("hero.description")}
           </p>
 
-          <div className="mt-8 md:mt-10 flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:justify-center">
+          <div className="mt-6 md:mt-10 flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:justify-center">
             <Link href="/migration" className="w-full sm:w-auto">
               <Button size="lg" variant="primary" className="w-full sm:w-auto">
                 {t("hero.cta.join")}
