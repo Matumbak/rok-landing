@@ -63,24 +63,37 @@ export function Hero() {
           aria-hidden
         />
 
-        {/* Bottom scrim — anchors the inscription strip without a
-         *  hard panel. Larger on mobile to reserve readable space. */}
+        {/* Bottom scrim — TWO LAYERS for a clean cut between artwork
+         *  and inscription strip. Lower layer is solid bg-deep so
+         *  the wreath emblem from the painting can't bleed into the
+         *  inscription area at the bottom; upper layer is the soft
+         *  fade that smoothly transitions back into the artwork
+         *  higher up. Earlier single-layer scrim let the artwork's
+         *  wreath emblem leak into the CTA area ("наплывание"). */}
         <div
-          className="absolute inset-x-0 bottom-0 h-[45%] md:h-[40%] bg-gradient-to-t from-background-deep via-background-deep/85 to-transparent"
+          className="absolute inset-x-0 bottom-0 h-[28%] md:h-[26%] bg-background-deep"
+          aria-hidden
+        />
+        <div
+          className="absolute inset-x-0 bottom-[28%] md:bottom-[26%] h-[24%] md:h-[20%] bg-gradient-to-t from-background-deep via-background-deep/92 to-transparent"
           aria-hidden
         />
 
-        {/* Petal-rose glow from the bottom-left */}
+        {/* Petal-rose glow from the bottom-left, sits in the
+         *  inscription area to tie the strip to the artwork pinks */}
         <div
-          className="absolute inset-0 bg-[radial-gradient(ellipse_at_15%_92%,rgba(196,122,138,0.12)_0%,transparent_45%)]"
+          className="absolute inset-x-0 bottom-0 h-[28%] md:h-[26%] bg-[radial-gradient(ellipse_at_20%_75%,rgba(196,122,138,0.12)_0%,transparent_55%)]"
           aria-hidden
         />
       </div>
 
       <CornerHud />
 
-      {/* Inscription strip — slogan + CTAs at the bottom */}
-      <div className="relative mx-auto w-full max-w-5xl px-6 lg:px-8 pb-10 md:pb-16">
+      {/* Inscription strip — slogan + CTAs in the solid scrim band
+       *  at the very bottom of the viewport. The artwork's wreath +
+       *  shield emblem now sits comfortably above the scrim's hard
+       *  edge, no overlap. */}
+      <div className="relative mx-auto w-full max-w-5xl px-6 lg:px-8 pb-10 md:pb-14">
         <h1 className="sr-only">{t("hero.title")}</h1>
 
         <motion.div
