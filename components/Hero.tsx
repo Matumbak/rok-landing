@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DiamondDivider } from "@/components/ornaments";
 import { useT } from "@/lib/i18n";
 
 /**
@@ -99,11 +98,6 @@ export function Hero() {
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
           className="text-center"
         >
-          <DiamondDivider
-            variant="default"
-            className="max-w-[120px] md:max-w-[140px] mx-auto mb-5 md:mb-6"
-          />
-
           {/*
            * Slogan readability — over the painting we need real
            * contrast without an opaque backdrop. Layered text-shadow
